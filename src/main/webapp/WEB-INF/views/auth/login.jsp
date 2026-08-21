@@ -1,19 +1,73 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>로그인 | MediTrials</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
-</head><body>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 | MediTrials</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/login.css">
+</head>
+<body class="login-page">
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
-<main class="auth-wrap"><div class="auth-card">
-  <h1>로그인</h1>
-  <form>
-    <div class="form-group"><label class="form-label">이메일</label><input class="form-control" type="email" placeholder="example@meditrials.kr"></div>
-    <div class="form-group"><label class="form-label">비밀번호</label><input class="form-control" type="password" placeholder="••••••••"></div>
-    <button type="button" class="btn btn-primary w-100" data-demo-alert="로그인 기능은 백엔드 연결 단계에서 적용합니다.">로그인</button>
-  </form>
-  <p class="text-center text-muted">계정이 없으신가요? <a class="link-blue" href="${pageContext.request.contextPath}/member/signup">회원가입</a></p>
-  <div class="divider"></div>
-  <p class="text-center"><a class="link-blue" href="${pageContext.request.contextPath}/business/signup">사업자이신가요? 기관 회원가입</a></p>
-</div></main>
-<%@ include file="/WEB-INF/views/common/footer.jsp" %></body></html>
+<main class="login-screen">
+    <section class="login-panel" aria-labelledby="loginTitle">
+        <h1 id="loginTitle" class="login-title">로그인</h1>
+
+        <!--
+            현재 단계에서는 로그인 화면과 입력 검증까지만 동작합니다.
+            MEMBER / Spring Security 연동 시 action과 인증 처리를 연결합니다.
+        -->
+        <form id="loginForm" class="login-form" novalidate>
+            <div class="login-field">
+                <label for="email" class="login-label">이메일</label>
+                <input
+                    id="email"
+                    name="email"
+                    class="login-input"
+                    type="email"
+                    placeholder="example@meditrials.kr"
+                    autocomplete="username"
+                    maxlength="100"
+                    required
+                >
+                <p id="emailError" class="login-error" aria-live="polite"></p>
+            </div>
+
+            <div class="login-field">
+                <label for="password" class="login-label">비밀번호</label>
+                <input
+                    id="password"
+                    name="password"
+                    class="login-input"
+                    type="password"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    maxlength="100"
+                    required
+                >
+                <p id="passwordError" class="login-error" aria-live="polite"></p>
+            </div>
+
+            <button type="submit" class="login-submit">로그인</button>
+            <p id="loginMessage" class="login-message" aria-live="polite"></p>
+        </form>
+
+        <p class="login-signup-guide">
+            <span>계정이 없으신가요?</span>
+            <a href="${pageContext.request.contextPath}/member/signup">회원가입</a>
+        </p>
+
+        <div class="login-divider" aria-hidden="true"></div>
+
+        <a class="business-signup-link" href="${pageContext.request.contextPath}/business/signup">
+            사업자이신가요? <strong>기관 회원가입</strong>
+        </a>
+    </section>
+</main>
+
+<%@ include file="/WEB-INF/views/common/footer.jsp" %>
+<script src="${pageContext.request.contextPath}/js/login.js"></script>
+</body>
+</html>

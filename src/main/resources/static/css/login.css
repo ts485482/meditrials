@@ -1,0 +1,202 @@
+/* =========================================================
+   MediTrials login-01
+   스토리보드 6페이지 로그인 화면 전용 스타일
+   ========================================================= */
+
+.login-page {
+    background: #ffffff;
+}
+
+/* 로그인 스토리보드에서는 상단 통합 검색창을 노출하지 않는다. */
+.login-page .mt-search {
+    display: none;
+}
+
+.login-page .mt-nav {
+    margin-left: auto;
+}
+
+.login-page .mt-auth {
+    margin-left: 14px;
+}
+
+.login-screen {
+    min-height: calc(100vh - 76px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 44px 20px 110px;
+    background: #ffffff;
+}
+
+.login-panel {
+    width: 536px;
+    max-width: 100%;
+    margin-top: 0;
+    padding: 34px 58px 42px;
+    border: 1px solid #dfe5ec;
+    border-radius: 15px;
+    background: #ffffff;
+}
+
+.login-title {
+    margin: 0 0 38px;
+    color: #123f7b;
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: -1px;
+}
+
+.login-form {
+    margin: 0;
+}
+
+.login-field {
+    margin-bottom: 21px;
+}
+
+.login-label {
+    display: block;
+    margin-bottom: 9px;
+    color: #2f4055;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 750;
+}
+
+.login-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid #d8dfe8;
+    border-radius: 8px;
+    outline: 0;
+    background: #ffffff;
+    color: #223149;
+    font-size: 14px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.login-input::placeholder {
+    color: #b5bdc8;
+}
+
+.login-input:focus {
+    border-color: #70a9eb;
+    box-shadow: 0 0 0 3px rgba(23, 105, 210, .10);
+}
+
+.login-input.is-invalid {
+    border-color: #e0676e;
+}
+
+.login-error {
+    min-height: 18px;
+    margin: 5px 0 -8px;
+    color: #c74750;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.login-submit {
+    width: 100%;
+    height: 50px;
+    margin-top: 2px;
+    border: 0;
+    border-radius: 8px;
+    background: #1769d2;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    transition: background .15s ease, transform .05s ease;
+}
+
+.login-submit:hover {
+    background: #125ebe;
+}
+
+.login-submit:active {
+    transform: translateY(1px);
+}
+
+.login-message {
+    min-height: 19px;
+    margin: 10px 0 0;
+    color: #68788d;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.login-signup-guide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 0;
+    color: #8a95a4;
+    font-size: 13px;
+}
+
+.login-signup-guide a {
+    color: #1769d2;
+    font-weight: 750;
+}
+
+.login-signup-guide a:hover,
+.business-signup-link:hover {
+    text-decoration: underline;
+}
+
+.login-divider {
+    width: 100%;
+    height: 1px;
+    margin: 28px 0 26px;
+    background: #e6ebf1;
+}
+
+.business-signup-link {
+    display: block;
+    color: #1769d2;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 650;
+    text-align: center;
+}
+
+.business-signup-link strong {
+    font-weight: 800;
+}
+
+@media (max-width: 980px) {
+    .login-page .mt-nav {
+        display: none;
+    }
+
+    .login-page .mt-auth {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 700px) {
+    .login-screen {
+        min-height: calc(100vh - 76px);
+        padding: 28px 16px 70px;
+    }
+
+    .login-panel {
+        width: 100%;
+        padding: 30px 24px 34px;
+    }
+
+    .login-title {
+        margin-bottom: 30px;
+        font-size: 30px;
+    }
+
+    .login-signup-guide {
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.business.dao.BusinessDAO">
+
+    <resultMap id="businessResultMap" type="meditrials.meditrials.business.vo.BusinessVO">
+        <id property="businessNo" column="BUSINESS_NO"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="orgType" column="ORG_TYPE"/>
+        <result property="businessRegNo" column="BUSINESS_REG_NO"/>
+        <result property="phone" column="PHONE"/>
+        <result property="email" column="EMAIL"/>
+        <result property="address" column="ADDRESS"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="approvalStatus" column="APPROVAL_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="approvedAt" column="APPROVED_AT"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="businessColumns">
+        BUSINESS_NO,
+        MEMBER_NO,
+        ORG_NAME,
+        ORG_TYPE,
+        BUSINESS_REG_NO,
+        PHONE,
+        EMAIL,
+        ADDRESS,
+        DESCRIPTION,
+        APPROVAL_STATUS,
+        REJECT_REASON,
+        APPROVED_AT,
+        CREATED_AT,
+        UPDATED_AT
+    </sql>
+
+    <select id="countBusinesses" resultType="int">
+        SELECT COUNT(*)
+          FROM BUSINESS
+    </select>
+
+    <select id="countMemberBusinessLinks" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER M
+          JOIN BUSINESS B
+            ON B.MEMBER_NO = M.MEMBER_NO
+    </select>
+
+    <select id="countByBusinessRegNo" resultType="int">
+        SELECT COUNT(*)
+          FROM BUSINESS
+         WHERE BUSINESS_REG_NO = #{businessRegNo}
+    </select>
+
+    <select id="selectBusinessByNo" resultMap="businessResultMap">
+        SELECT <include refid="businessColumns"/>
+          FROM BUSINESS
+         WHERE BUSINESS_NO = #{businessNo}
+    </select>
+
+    <select id="selectBusinessByMemberNo" resultMap="businessResultMap">
+        SELECT <include refid="businessColumns"/>
+          FROM BUSINESS
+         WHERE MEMBER_NO = #{memberNo}
+    </select>
+
+    <select id="selectLatestBusiness" resultMap="businessResultMap">
+        SELECT *
+          FROM (
+                SELECT <include refid="businessColumns"/>
+                  FROM BUSINESS
+                 ORDER BY BUSINESS_NO DESC
+               )
+         WHERE ROWNUM = 1
+    </select>
+
+    <insert id="insertBusiness" parameterType="meditrials.meditrials.business.vo.BusinessVO">
+        <selectKey keyProperty="businessNo" resultType="long" order="BEFORE">
+            SELECT SEQ_BUSINESS.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO BUSINESS (
+            BUSINESS_NO,
+            MEMBER_NO,
+            ORG_NAME,
+            ORG_TYPE,
+            BUSINESS_REG_NO,
+            PHONE,
+            EMAIL,
+            ADDRESS,
+            DESCRIPTION,
+            APPROVAL_STATUS,
+            REJECT_REASON,
+            APPROVED_AT,
+            CREATED_AT,
+            UPDATED_AT
+        ) VALUES (
+            #{businessNo},
+            #{memberNo},
+            #{orgName},
+            #{orgType},
+            #{businessRegNo,jdbcType=VARCHAR},
+            #{phone,jdbcType=VARCHAR},
+            #{email,jdbcType=VARCHAR},
+            #{address,jdbcType=VARCHAR},
+            #{description,jdbcType=VARCHAR},
+            #{approvalStatus},
+            NULL,
+            NULL,
+            SYSDATE,
+            NULL
+        )
+    </insert>
+
+</mapper>
