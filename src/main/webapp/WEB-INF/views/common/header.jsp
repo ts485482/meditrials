@@ -1,4 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+    Object loginMemberNo = session.getAttribute("LOGIN_MEMBER_NO");
+    String loginMemberRole = (String) session.getAttribute("LOGIN_MEMBER_ROLE");
+    String memberInfoPath = "/mypage";
+
+    if ("BUSINESS".equals(loginMemberRole)) {
+        memberInfoPath = "/business";
+    } else if ("ADMIN".equals(loginMemberRole)) {
+        memberInfoPath = "/admin";
+    }
+%>
 <header class="mt-header">
   <div class="mt-container mt-header-inner">
     <a class="mt-logo" href="${pageContext.request.contextPath}/main" aria-label="MediTrials 메인으로 이동">
@@ -17,10 +28,16 @@
       <input type="search" name="keyword" placeholder="질환명 또는 임상시험 키워드" aria-label="통합 검색어">
     </form>
 
-    <%-- 로그인 기능 연결 전 비로그인 상태 UI --%>
     <div class="mt-auth">
-      <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/login">로그인</a>
-      <a class="btn btn-outline btn-sm" href="${pageContext.request.contextPath}/member/signup">회원가입</a>
+      <% if (loginMemberNo == null) { %>
+        <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/login">로그인</a>
+        <a class="btn btn-outline btn-sm" href="${pageContext.request.contextPath}/member/signup">회원가입</a>
+      <% } else { %>
+        <a class="btn btn-primary btn-sm" href="<%= request.getContextPath() %><%= memberInfoPath %>">내 정보</a>
+        <form action="${pageContext.request.contextPath}/logout" method="post" style="margin:0">
+          <button type="submit" class="btn btn-outline btn-sm">로그아웃</button>
+        </form>
+      <% } %>
     </div>
   </div>
 </header>

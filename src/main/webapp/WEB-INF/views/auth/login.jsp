@@ -15,11 +15,14 @@
     <section class="login-panel" aria-labelledby="loginTitle">
         <h1 id="loginTitle" class="login-title">로그인</h1>
 
-        <!--
-            현재 단계에서는 로그인 화면과 입력 검증까지만 동작합니다.
-            MEMBER / Spring Security 연동 시 action과 인증 처리를 연결합니다.
-        -->
-        <form id="loginForm" class="login-form" novalidate>
+        <form
+            id="loginForm"
+            class="login-form"
+            action="${pageContext.request.contextPath}/login"
+            method="post"
+            data-error-code="${loginErrorCode}"
+            novalidate
+        >
             <div class="login-field">
                 <label for="email" class="login-label">이메일</label>
                 <input

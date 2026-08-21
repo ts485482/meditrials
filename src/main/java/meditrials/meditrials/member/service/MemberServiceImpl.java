@@ -50,6 +50,24 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public MemberVO authenticate(String email, String rawPassword) {
+        if (email == null || email.isBlank() || rawPassword == null || rawPassword.isBlank()) {
+            return null;
+        }
+
+        MemberVO member = memberDAO.selectMemberByEmail(normalizeEmail(email));
+        if (member == null || member.getPasswordHash() == null || member.getPasswordHash().isBlank()) {
+            return null;
+        }
+
+        if (!passwordEncoder.matches(rawPassword, member.getPasswordHash())) {
+            return null;
+        }
+
+        return member;
+    }
+
+    @Override
     @Transactional
     public MemberVO registerUser(String email, String rawPassword, String memberName, String phone) {
         String normalizedEmail = normalizeEmail(email);

@@ -12,5 +12,7 @@ public interface MemberService {
 
     MemberVO getMemberByEmail(String email);
 
+    MemberVO authenticate(String email, String rawPassword);
+
     MemberVO registerUser(String email, String rawPassword, String memberName, String phone);
 }

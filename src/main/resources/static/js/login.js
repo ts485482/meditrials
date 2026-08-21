@@ -24,26 +24,54 @@
         errorElement.textContent = message;
     }
 
+    function clearLoginMessage() {
+        loginMessage.textContent = "";
+    }
+
+    function applyServerError() {
+        const errorCode = form.dataset.errorCode || "";
+
+        if (errorCode === "LOGIN_REQUIRED") {
+            loginMessage.textContent = "이메일과 비밀번호를 모두 입력해주세요.";
+            return;
+        }
+
+        if (errorCode === "EMAIL_INVALID") {
+            setFieldError(emailInput, emailError, "이메일 형식이 올바르지 않습니다.");
+            return;
+        }
+
+        if (errorCode === "AUTH_FAILED") {
+            emailInput.classList.add("is-invalid");
+            passwordInput.classList.add("is-invalid");
+            loginMessage.textContent = "이메일 또는 비밀번호가 일치하지 않습니다.";
+            return;
+        }
+
+        if (errorCode === "ACCOUNT_INACTIVE") {
+            loginMessage.textContent = "현재 이용할 수 없는 계정입니다. 관리자에게 문의해주세요.";
+        }
+    }
+
     emailInput.addEventListener("input", () => {
         clearFieldError(emailInput, emailError);
-        loginMessage.textContent = "";
+        clearLoginMessage();
     });
 
     passwordInput.addEventListener("input", () => {
         clearFieldError(passwordInput, passwordError);
-        loginMessage.textContent = "";
+        emailInput.classList.remove("is-invalid");
+        clearLoginMessage();
     });
 
     form.addEventListener("submit", (event) => {
-        event.preventDefault();
-
         const email = emailInput.value.trim();
         const password = passwordInput.value;
         let valid = true;
 
         clearFieldError(emailInput, emailError);
         clearFieldError(passwordInput, passwordError);
-        loginMessage.textContent = "";
+        clearLoginMessage();
 
         if (!email) {
             setFieldError(emailInput, emailError, "이메일을 입력해주세요.");
@@ -59,17 +87,13 @@
         }
 
         if (!valid) {
+            event.preventDefault();
             const firstInvalid = form.querySelector(".is-invalid");
             if (firstInvalid) {
                 firstInvalid.focus();
             }
-            return;
         }
-
-        /*
-         * MEMBER DB와 인증 기능을 연결하기 전까지는 실제 로그인 요청을 보내지 않는다.
-         * 추후 Spring Security 적용 시 이 부분을 제거하고 form action으로 인증 요청한다.
-         */
-        loginMessage.textContent = "로그인 화면 검증이 완료되었습니다. 실제 인증은 회원 기능 연결 단계에서 적용됩니다.";
     });
+
+    applyServerError();
 })();
