@@ -2,7 +2,9 @@ package meditrials.meditrials.member.service;
 
 import java.util.Locale;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import meditrials.meditrials.member.dao.MemberDAO;
 import meditrials.meditrials.member.vo.MemberVO;
@@ -10,15 +12,20 @@ import meditrials.meditrials.member.vo.MemberVO;
 @Service
 public class MemberServiceImpl implements MemberService {
 
-    private final MemberDAO memberMapper;
+    private static final String ROLE_USER = "USER";
+    private static final String STATUS_ACTIVE = "ACTIVE";
 
-    public MemberServiceImpl(MemberDAO memberMapper) {
-        this.memberMapper = memberMapper;
+    private final MemberDAO memberDAO;
+    private final PasswordEncoder passwordEncoder;
+
+    public MemberServiceImpl(MemberDAO memberDAO, PasswordEncoder passwordEncoder) {
+        this.memberDAO = memberDAO;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public int getMemberCount() {
-        return memberMapper.countMembers();
+        return memberDAO.countMembers();
     }
 
     @Override
@@ -26,12 +33,12 @@ public class MemberServiceImpl implements MemberService {
         if (email == null || email.isBlank()) {
             return false;
         }
-        return memberMapper.countByEmail(email.trim().toLowerCase(Locale.ROOT)) > 0;
+        return memberDAO.countByEmail(normalizeEmail(email)) > 0;
     }
 
     @Override
     public MemberVO getMemberByNo(Long memberNo) {
-        return memberMapper.selectMemberByNo(memberNo);
+        return memberDAO.selectMemberByNo(memberNo);
     }
 
     @Override
@@ -39,6 +46,35 @@ public class MemberServiceImpl implements MemberService {
         if (email == null || email.isBlank()) {
             return null;
         }
-        return memberMapper.selectMemberByEmail(email.trim().toLowerCase(Locale.ROOT));
+        return memberDAO.selectMemberByEmail(normalizeEmail(email));
+    }
+
+    @Override
+    @Transactional
+    public MemberVO registerUser(String email, String rawPassword, String memberName, String phone) {
+        String normalizedEmail = normalizeEmail(email);
+
+        if (memberDAO.countByEmail(normalizedEmail) > 0) {
+            throw new IllegalStateException("EMAIL_DUPLICATED");
+        }
+
+        MemberVO member = new MemberVO();
+        member.setEmail(normalizedEmail);
+        member.setPasswordHash(passwordEncoder.encode(rawPassword));
+        member.setMemberName(memberName.trim());
+        member.setPhone(phone.trim());
+        member.setRoleCode(ROLE_USER);
+        member.setStatus(STATUS_ACTIVE);
+
+        int insertedRows = memberDAO.insertMember(member);
+        if (insertedRows != 1) {
+            throw new IllegalStateException("MEMBER_INSERT_FAILED");
+        }
+
+        return member;
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

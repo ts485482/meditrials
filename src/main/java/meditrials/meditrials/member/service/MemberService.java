@@ -11,4 +11,6 @@ public interface MemberService {
     MemberVO getMemberByNo(Long memberNo);
 
     MemberVO getMemberByEmail(String email);
+
+    MemberVO registerUser(String email, String rawPassword, String memberName, String phone);
 }

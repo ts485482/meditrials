@@ -51,6 +51,12 @@
 			<version>4.0.0</version>
 		</dependency>
 
+		<!-- 회원 비밀번호를 BCrypt로 저장하기 위한 암호화 모듈 -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
