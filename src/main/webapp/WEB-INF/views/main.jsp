@@ -13,9 +13,9 @@
 <main class="mt-main main-page">
   <section class="mt-container main-hero" aria-labelledby="mainHeroTitle">
     <div class="main-hero-copy">
-      <h1 id="mainHeroTitle">희귀질환, 희망을 찾는 여정</h1>
+      <h1 id="mainHeroTitle">치료의 가능성을 찾는 여정</h1>
       <h2>MediTrials가 임상시험 참여의 기회를 연결합니다.</h2>
-      <p>신뢰할 수 있는 정보를 기반으로 더 나은 치료의 가능성을 함께 만들어갑니다.</p>
+      <p>난치성·치료 미충족 질환 정보와 임상시험을 한곳에서 연결합니다.</p>
       <a class="btn btn-primary main-hero-button" href="${pageContext.request.contextPath}/support">서비스 소개 보기</a>
     </div>
 
@@ -55,14 +55,14 @@
     <article class="main-panel disease-panel">
       <h2>주요 질환</h2>
       <div class="main-disease-grid">
-        <a href="${pageContext.request.contextPath}/diseases?category=rare"><span class="disease-symbol"></span><strong>희귀질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=intractable"><span class="disease-symbol"></span><strong>난치성 질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=genetic"><span class="disease-symbol"></span><strong>유전성 질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=neurology"><span class="disease-symbol"></span><strong>신경계 질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=oncology"><span class="disease-symbol"></span><strong>종양질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=respiratory"><span class="disease-symbol"></span><strong>호흡기 질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=immune"><span class="disease-symbol"></span><strong>면역질환</strong></a>
-        <a href="${pageContext.request.contextPath}/diseases?category=etc"><span class="disease-symbol"></span><strong>기타 질환</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?category=NEURO"><span class="disease-symbol"></span><strong>신경퇴행성</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?category=AUTOIMMUNE"><span class="disease-symbol"></span><strong>자가면역·면역</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?category=CANCER"><span class="disease-symbol"></span><strong>암·종양성</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?category=GENETIC"><span class="disease-symbol"></span><strong>유전성</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?category=CHRONIC"><span class="disease-symbol"></span><strong>만성·난치성</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases"><span class="disease-symbol"></span><strong>치료 미충족 질환</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?keyword=알츠하이머"><span class="disease-symbol"></span><strong>알츠하이머병</strong></a>
+        <a href="${pageContext.request.contextPath}/diseases?keyword=파킨슨"><span class="disease-symbol"></span><strong>파킨슨병</strong></a>
       </div>
     </article>
 

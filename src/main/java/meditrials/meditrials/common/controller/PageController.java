@@ -38,16 +38,6 @@ public class PageController {
         return "business/signup";
     }
 
-    @GetMapping("/diseases")
-    public String diseaseList() {
-        return "disease/list";
-    }
-
-    @GetMapping("/diseases/{id}")
-    public String diseaseDetail(@PathVariable String id) {
-        return "disease/detail";
-    }
-
     @GetMapping("/trials")
     public String trialList() {
         return "trial/list";

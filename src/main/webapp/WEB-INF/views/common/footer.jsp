@@ -3,7 +3,7 @@
   <div class="mt-container footer-inner">
     <div class="footer-brand">
       <strong>MediTrials</strong>
-      <p>희귀·난치질환 및 임상시험 통합 정보 플랫폼</p>
+      <p>난치성·치료 미충족 질환 및 임상시험 통합 정보 플랫폼</p>
       <small>© 2026 MediTrials. All Rights Reserved.</small>
     </div>
     <nav class="footer-links" aria-label="푸터 메뉴">

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.disease.dao.DiseaseDAO">
+
+    <resultMap id="diseaseResultMap" type="meditrials.meditrials.disease.vo.DiseaseVO">
+        <id property="diseaseNo" column="DISEASE_NO"/>
+        <result property="sourceType" column="SOURCE_TYPE"/>
+        <result property="sourceCode" column="SOURCE_CODE"/>
+        <result property="diseaseName" column="DISEASE_NAME"/>
+        <result property="englishName" column="ENGLISH_NAME"/>
+        <result property="category" column="CATEGORY"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="symptomText" column="SYMPTOM_TEXT"/>
+        <result property="sourceUrl" column="SOURCE_URL"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+        <result property="relatedTrialCount" column="RELATED_TRIAL_COUNT"/>
+    </resultMap>
+
+    <sql id="diseaseColumns">
+        D.DISEASE_NO,
+        D.SOURCE_TYPE,
+        D.SOURCE_CODE,
+        D.DISEASE_NAME,
+        D.ENGLISH_NAME,
+        D.CATEGORY,
+        D.DESCRIPTION,
+        D.SYMPTOM_TEXT,
+        D.SOURCE_URL,
+        D.CREATED_AT,
+        D.UPDATED_AT,
+        (
+            SELECT COUNT(*)
+              FROM TRIAL_DISEASE TD
+             WHERE TD.DISEASE_NO = D.DISEASE_NO
+        ) AS RELATED_TRIAL_COUNT
+    </sql>
+
+    <insert id="mergeDisease" parameterType="meditrials.meditrials.disease.vo.DiseaseVO">
+        MERGE INTO DISEASE D
+        USING (
+            SELECT
+                #{sourceType} AS SOURCE_TYPE,
+                #{sourceCode} AS SOURCE_CODE,
+                #{diseaseName} AS DISEASE_NAME,
+                #{englishName,jdbcType=VARCHAR} AS ENGLISH_NAME,
+                #{category,jdbcType=VARCHAR} AS CATEGORY
+              FROM DUAL
+        ) S
+           ON (D.SOURCE_CODE = S.SOURCE_CODE)
+        WHEN MATCHED THEN
+            UPDATE SET
+                D.SOURCE_TYPE = S.SOURCE_TYPE,
+                D.DISEASE_NAME = S.DISEASE_NAME,
+                D.ENGLISH_NAME = COALESCE(S.ENGLISH_NAME, D.ENGLISH_NAME),
+                D.CATEGORY = COALESCE(S.CATEGORY, D.CATEGORY),
+                D.UPDATED_AT = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (
+                DISEASE_NO,
+                SOURCE_TYPE,
+                SOURCE_CODE,
+                DISEASE_NAME,
+                ENGLISH_NAME,
+                CATEGORY,
+                CREATED_AT,
+                UPDATED_AT
+            ) VALUES (
+                SEQ_DISEASE.NEXTVAL,
+                S.SOURCE_TYPE,
+                S.SOURCE_CODE,
+                S.DISEASE_NAME,
+                S.ENGLISH_NAME,
+                S.CATEGORY,
+                SYSDATE,
+                NULL
+            )
+    </insert>
+
+    <update id="updateDiseaseDetail" parameterType="meditrials.meditrials.disease.vo.DiseaseVO">
+        UPDATE DISEASE
+           SET DESCRIPTION = #{description,jdbcType=CLOB},
+               SYMPTOM_TEXT = #{symptomText,jdbcType=CLOB},
+               SOURCE_URL = #{sourceUrl,jdbcType=VARCHAR},
+               UPDATED_AT = SYSDATE
+         WHERE DISEASE_NO = #{diseaseNo}
+    </update>
+
+    <select id="selectDiseaseByNo" resultMap="diseaseResultMap">
+        SELECT <include refid="diseaseColumns"/>
+          FROM DISEASE D
+         WHERE D.DISEASE_NO = #{diseaseNo}
+    </select>
+
+    <select id="selectDiseaseBySourceCode" resultMap="diseaseResultMap">
+        SELECT <include refid="diseaseColumns"/>
+          FROM DISEASE D
+         WHERE D.SOURCE_CODE = #{sourceCode}
+    </select>
+
+    <select id="selectDiseaseList" resultMap="diseaseResultMap">
+        SELECT *
+          FROM (
+                SELECT <include refid="diseaseColumns"/>
+                  FROM DISEASE D
+                 WHERE 1 = 1
+                   <if test="keyword != null and keyword != ''">
+                     AND (
+                         LOWER(D.DISEASE_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(D.ENGLISH_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(D.SOURCE_CODE) LIKE '%' || LOWER(#{keyword}) || '%'
+                     )
+                   </if>
+                   <if test="category != null and category != ''">
+                     AND INSTR(D.CATEGORY, #{category}) &gt; 0
+                   </if>
+                 ORDER BY
+                     CASE WHEN D.CATEGORY = '기타 치료 연구 질환' THEN 1 ELSE 0 END,
+                     D.DISEASE_NAME
+               )
+         WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <select id="countDiseaseList" resultType="int">
+        SELECT COUNT(*)
+          FROM DISEASE D
+         WHERE 1 = 1
+           <if test="keyword != null and keyword != ''">
+             AND (
+                 LOWER(D.DISEASE_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                 OR LOWER(D.ENGLISH_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                 OR LOWER(D.SOURCE_CODE) LIKE '%' || LOWER(#{keyword}) || '%'
+             )
+           </if>
+           <if test="category != null and category != ''">
+             AND INSTR(D.CATEGORY, #{category}) &gt; 0
+           </if>
+    </select>
+
+    <select id="countDiseaseBySourceType" resultType="int">
+        SELECT COUNT(*)
+          FROM DISEASE
+         WHERE SOURCE_TYPE = #{sourceType}
+    </select>
+
+</mapper>
