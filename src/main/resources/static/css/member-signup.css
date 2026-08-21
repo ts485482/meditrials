@@ -1,0 +1,43 @@
+.member-signup-card {
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+.member-signup-actions {
+  margin-top: 28px;
+  text-align: right;
+}
+
+.member-signup-actions .btn {
+  min-width: 145px;
+}
+
+.signup-message,
+.signup-field-message {
+  display: none;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.signup-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.signup-message-error {
+  color: #b93640;
+  background: #fff1f2;
+  border: 1px solid #f5cbd0;
+}
+
+.signup-field-message.is-success {
+  display: block;
+  color: #18825e;
+}
+
+.signup-field-message.is-error {
+  display: block;
+  color: #b93640;
+}
