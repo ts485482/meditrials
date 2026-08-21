@@ -1,8 +1,10 @@
 package meditrials.meditrials.common.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PageController {
@@ -18,7 +20,16 @@ public class PageController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(
+            @RequestParam(name = "required", defaultValue = "false") boolean required,
+            Model model) {
+
+        if (required) {
+            model.addAttribute(
+                    "loginNotice",
+                    "로그인이 필요한 메뉴입니다. 로그인 후 이용해주세요.");
+        }
+
         return "auth/login";
     }
 

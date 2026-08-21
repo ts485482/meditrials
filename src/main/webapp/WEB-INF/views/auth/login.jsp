@@ -54,7 +54,7 @@
             </div>
 
             <button type="submit" class="login-submit">로그인</button>
-            <p id="loginMessage" class="login-message" aria-live="polite"></p>
+            <p id="loginMessage" class="login-message" aria-live="polite">${loginNotice}</p>
         </form>
 
         <p class="login-signup-guide">
