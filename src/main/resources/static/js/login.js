@@ -28,6 +28,15 @@
         loginMessage.textContent = "";
     }
 
+    function applyRequiredLoginMessage() {
+        const params = new URLSearchParams(window.location.search);
+        const errorCode = form.dataset.errorCode || "";
+
+        if (!errorCode && params.get("required") === "true") {
+            loginMessage.textContent = "로그인이 필요한 메뉴입니다. 로그인 후 이용해주세요.";
+        }
+    }
+
     function applyServerError() {
         const errorCode = form.dataset.errorCode || "";
 
@@ -95,5 +104,6 @@
         }
     });
 
+    applyRequiredLoginMessage();
     applyServerError();
 })();

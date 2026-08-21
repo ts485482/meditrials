@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import meditrials.meditrials.common.constant.SessionConstants;
 import meditrials.meditrials.member.service.MemberService;
 import meditrials.meditrials.member.vo.MemberVO;
 
@@ -21,11 +22,6 @@ public class MemberLoginController {
     private static final String ROLE_USER = "USER";
     private static final String ROLE_BUSINESS = "BUSINESS";
     private static final String ROLE_ADMIN = "ADMIN";
-
-    private static final String SESSION_MEMBER_NO = "LOGIN_MEMBER_NO";
-    private static final String SESSION_MEMBER_EMAIL = "LOGIN_MEMBER_EMAIL";
-    private static final String SESSION_MEMBER_NAME = "LOGIN_MEMBER_NAME";
-    private static final String SESSION_MEMBER_ROLE = "LOGIN_MEMBER_ROLE";
     private static final int SESSION_TIMEOUT_SECONDS = 30 * 60;
 
     private final MemberService memberService;
@@ -65,10 +61,10 @@ public class MemberLoginController {
         HttpSession session = request.getSession(true);
         request.changeSessionId();
         session.setMaxInactiveInterval(SESSION_TIMEOUT_SECONDS);
-        session.setAttribute(SESSION_MEMBER_NO, member.getMemberNo());
-        session.setAttribute(SESSION_MEMBER_EMAIL, member.getEmail());
-        session.setAttribute(SESSION_MEMBER_NAME, member.getMemberName());
-        session.setAttribute(SESSION_MEMBER_ROLE, member.getRoleCode());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_NO, member.getMemberNo());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_EMAIL, member.getEmail());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_NAME, member.getMemberName());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_ROLE, member.getRoleCode());
 
         return redirectByRole(member.getRoleCode());
     }
