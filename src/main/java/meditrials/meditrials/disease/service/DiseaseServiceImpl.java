@@ -56,7 +56,7 @@ public class DiseaseServiceImpl implements DiseaseService {
         try {
             if (normalizedKeyword.isEmpty()) {
                 ensureFocusDiseasesSynced();
-            } else {
+            } else if (!hasCachedSearchResult(normalizedKeyword)) {
                 syncSearchResults(normalizedKeyword);
             }
             notice = "건강보험심사평가원 질병명칭/코드 정보를 기준으로 조회하고, "
@@ -97,8 +97,10 @@ public class DiseaseServiceImpl implements DiseaseService {
     }
 
     private void ensureFocusDiseasesSynced() {
-        int targetCount = DiseaseFocusCatalog.diseases().size();
-        if (diseaseDAO.countDiseaseBySourceType(SOURCE_HIRA) >= targetCount) {
+        // 초기 대표 질환 적재는 HIRA 데이터가 하나도 없을 때만 수행한다.
+        // 일부 대표 질환이 HIRA 명칭 차이로 매칭되지 않더라도 매 화면 진입마다
+        // 외부 API를 다시 호출하지 않고, 이후에는 Oracle DB를 우선 사용한다.
+        if (diseaseDAO.countDiseaseBySourceType(SOURCE_HIRA) > 0) {
             return;
         }
 
@@ -133,6 +135,10 @@ public class DiseaseServiceImpl implements DiseaseService {
         }
 
         return selectBestCandidate(fallbackCandidates, focusDisease, false);
+    }
+
+    private boolean hasCachedSearchResult(String keyword) {
+        return diseaseDAO.countDiseaseList(keyword, "") > 0;
     }
 
     private void syncSearchResults(String keyword) {

@@ -13,7 +13,8 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class ClinicalTrialsClient {
 
-    private static final Duration CACHE_DURATION = Duration.ofHours(6);
+    private static final Duration CACHE_DURATION = Duration.ofHours(12);
+    private static final Duration FAILURE_CACHE_DURATION = Duration.ofMinutes(5);
 
     private final RestClient restClient;
     private final Map<String, TrialCountCache> cache = new ConcurrentHashMap<>();
@@ -33,7 +34,7 @@ public class ClinicalTrialsClient {
 
         String key = diseaseName.trim().toLowerCase(java.util.Locale.ROOT);
         TrialCountCache cached = cache.get(key);
-        if (cached != null && cached.cachedAt().plus(CACHE_DURATION).isAfter(Instant.now())) {
+        if (isCacheValid(cached)) {
             return cached.count();
         }
 
@@ -50,13 +51,23 @@ public class ClinicalTrialsClient {
                     .body(Map.class);
 
             Integer count = readInteger(response == null ? null : response.get("totalCount"));
-            if (count != null) {
-                cache.put(key, new TrialCountCache(count, Instant.now()));
-            }
+            cache.put(key, new TrialCountCache(count, Instant.now()));
             return count;
         } catch (RestClientException exception) {
+            cache.put(key, new TrialCountCache(null, Instant.now()));
             return null;
         }
+    }
+
+    private boolean isCacheValid(TrialCountCache cached) {
+        if (cached == null) {
+            return false;
+        }
+
+        Duration duration = cached.count() == null
+                ? FAILURE_CACHE_DURATION
+                : CACHE_DURATION;
+        return cached.cachedAt().plus(duration).isAfter(Instant.now());
     }
 
     private Integer readInteger(Object value) {
@@ -73,6 +84,6 @@ public class ClinicalTrialsClient {
         return null;
     }
 
-    private record TrialCountCache(int count, Instant cachedAt) {
+    private record TrialCountCache(Integer count, Instant cachedAt) {
     }
 }
