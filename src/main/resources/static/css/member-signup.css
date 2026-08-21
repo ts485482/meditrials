@@ -41,3 +41,14 @@
   display: block;
   color: #b93640;
 }
+
+/* 비밀번호 확인 값이 비밀번호와 다를 때 즉시 오류 상태를 표시합니다. */
+.member-signup-card .form-control.is-invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.member-signup-card .form-control.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.18);
+}

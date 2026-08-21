@@ -19,6 +19,8 @@ import meditrials.meditrials.member.service.MemberService;
 public class MemberController {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern ENGLISH_LETTER_PATTERN = Pattern.compile("[A-Za-z]");
+    private static final String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=[]{};:,.<>/?`~";
 
     private final MemberService memberService;
 
@@ -33,8 +35,8 @@ public class MemberController {
 
     @GetMapping("/check-email")
     @ResponseBody
-    public Map<String, Object> checkEmail(@RequestParam String email) {
-        if (email.isBlank() || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+    public Map<String, Object> checkEmail(@RequestParam(defaultValue = "") String email) {
+        if (isBlank(email) || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
             return Map.of(
                     "available", false,
                     "message", "올바른 이메일 형식을 입력해주세요.");
@@ -48,21 +50,27 @@ public class MemberController {
 
     @PostMapping("/signup")
     public String signup(
-            @RequestParam String email,
-            @RequestParam String password,
-            @RequestParam String passwordConfirm,
-            @RequestParam String memberName,
-            @RequestParam String phone,
+            @RequestParam(defaultValue = "") String email,
+            @RequestParam(defaultValue = "") String password,
+            @RequestParam(defaultValue = "") String passwordConfirm,
+            @RequestParam(defaultValue = "") String memberName,
+            @RequestParam(defaultValue = "") String phone,
             Model model) {
 
         String errorCode = validateSignup(email, password, passwordConfirm, memberName, phone);
         if (errorCode != null) {
             model.addAttribute("errorCode", errorCode);
+            model.addAttribute("email", email.trim());
+            model.addAttribute("memberName", memberName.trim());
+            model.addAttribute("phone", phone.trim());
             return "member/signup";
         }
 
         if (memberService.isEmailDuplicated(email)) {
             model.addAttribute("errorCode", "EMAIL_DUPLICATED");
+            model.addAttribute("email", email.trim());
+            model.addAttribute("memberName", memberName.trim());
+            model.addAttribute("phone", phone.trim());
             return "member/signup";
         }
 
@@ -70,10 +78,16 @@ public class MemberController {
             memberService.registerUser(email, password, memberName, phone);
         } catch (DataIntegrityViolationException exception) {
             model.addAttribute("errorCode", "EMAIL_DUPLICATED");
+            model.addAttribute("email", email.trim());
+            model.addAttribute("memberName", memberName.trim());
+            model.addAttribute("phone", phone.trim());
             return "member/signup";
         } catch (IllegalStateException exception) {
             if ("EMAIL_DUPLICATED".equals(exception.getMessage())) {
                 model.addAttribute("errorCode", "EMAIL_DUPLICATED");
+                model.addAttribute("email", email.trim());
+                model.addAttribute("memberName", memberName.trim());
+                model.addAttribute("phone", phone.trim());
                 return "member/signup";
             }
             throw exception;
@@ -89,16 +103,44 @@ public class MemberController {
             String memberName,
             String phone) {
 
-        if (email.isBlank() || password.isBlank() || passwordConfirm.isBlank()
-                || memberName.isBlank() || phone.isBlank()) {
-            return "REQUIRED";
+        if (isBlank(email)) {
+            return "EMAIL_REQUIRED";
+        }
+        if (isBlank(password)) {
+            return "PASSWORD_REQUIRED";
+        }
+        if (isBlank(passwordConfirm)) {
+            return "PASSWORD_CONFIRM_REQUIRED";
+        }
+        if (isBlank(memberName)) {
+            return "NAME_REQUIRED";
+        }
+        if (isBlank(phone)) {
+            return "PHONE_REQUIRED";
         }
         if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
             return "EMAIL_INVALID";
+        }
+        if (!isValidPassword(password)) {
+            return "PASSWORD_INVALID";
         }
         if (!password.equals(passwordConfirm)) {
             return "PASSWORD_MISMATCH";
         }
         return null;
+    }
+
+    private boolean isValidPassword(String password) {
+        if (password.length() < 8 || !ENGLISH_LETTER_PATTERN.matcher(password).find()) {
+            return false;
+        }
+
+        return password.chars()
+                .mapToObj(character -> (char) character)
+                .anyMatch(character -> SPECIAL_CHARACTERS.indexOf(character) >= 0);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }
