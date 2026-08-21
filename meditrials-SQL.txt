@@ -1,0 +1,800 @@
+DB기본구조 - Meditrials
+
+-- =============================================================
+-- MediTrials Database Schema (Oracle)
+-- Target: JSP/Spring Boot + MyBatis + Oracle
+-- Purpose: USER / BUSINESS / ADMIN + disease/clinical-trial search
+--          favorites, inquiries/participation, premium promotion,
+--          payments, dashboard statistics
+-- Created: 2026-08-21
+-- =============================================================
+
+-- =============================================================
+-- 0. SEQUENCES
+-- =============================================================
+
+CREATE SEQUENCE SEQ_MEMBER START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_BUSINESS START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_DISEASE START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_CLINICAL_TRIAL START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_TRIAL_INQUIRY START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_TRIAL_PARTICIPATION START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_BUSINESS_SUBSCRIPTION START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_PAYMENT START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_TRIAL_PROMOTION START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_TRIAL_VIEW_HISTORY START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_NOTIFICATION START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_NOTICE START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_ADMIN_REVIEW_LOG START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+
+-- =============================================================
+-- 1. MEMBER / AUTH
+-- =============================================================
+
+CREATE TABLE MEMBER (
+    MEMBER_NO       NUMBER          NOT NULL,
+    EMAIL           VARCHAR2(200)   NOT NULL,
+    PASSWORD_HASH   VARCHAR2(255)   NOT NULL,
+    MEMBER_NAME     VARCHAR2(100)   NOT NULL,
+    PHONE           VARCHAR2(30),
+    ROLE_CODE       VARCHAR2(20)    DEFAULT 'USER' NOT NULL,
+    STATUS          VARCHAR2(20)    DEFAULT 'ACTIVE' NOT NULL,
+    CREATED_AT      DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT      DATE,
+
+    CONSTRAINT PK_MEMBER PRIMARY KEY (MEMBER_NO),
+    CONSTRAINT UQ_MEMBER_EMAIL UNIQUE (EMAIL),
+    CONSTRAINT CK_MEMBER_ROLE
+        CHECK (ROLE_CODE IN ('USER', 'BUSINESS', 'ADMIN')),
+    CONSTRAINT CK_MEMBER_STATUS
+        CHECK (STATUS IN ('ACTIVE', 'SUSPENDED', 'WITHDRAWN'))
+);
+
+COMMENT ON TABLE MEMBER IS 'MediTrials 공통 회원';
+COMMENT ON COLUMN MEMBER.ROLE_CODE IS 'USER / BUSINESS / ADMIN';
+
+
+-- =============================================================
+-- 2. BUSINESS
+-- =============================================================
+
+CREATE TABLE BUSINESS (
+    BUSINESS_NO         NUMBER          NOT NULL,
+    MEMBER_NO           NUMBER          NOT NULL,
+    ORG_NAME            VARCHAR2(200)   NOT NULL,
+    ORG_TYPE            VARCHAR2(30)    NOT NULL,
+    BUSINESS_REG_NO     VARCHAR2(50),
+    PHONE               VARCHAR2(30),
+    EMAIL               VARCHAR2(200),
+    ADDRESS             VARCHAR2(500),
+    DESCRIPTION         VARCHAR2(1000),
+
+    APPROVAL_STATUS     VARCHAR2(20)    DEFAULT 'PENDING' NOT NULL,
+    REJECT_REASON       VARCHAR2(1000),
+    APPROVED_AT         DATE,
+
+    CREATED_AT          DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT          DATE,
+
+    CONSTRAINT PK_BUSINESS PRIMARY KEY (BUSINESS_NO),
+    CONSTRAINT UQ_BUSINESS_MEMBER UNIQUE (MEMBER_NO),
+    CONSTRAINT UQ_BUSINESS_REG_NO UNIQUE (BUSINESS_REG_NO),
+
+    CONSTRAINT FK_BUSINESS_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT CK_BUSINESS_ORG_TYPE
+        CHECK (ORG_TYPE IN ('HOSPITAL', 'PHARMA', 'RESEARCH', 'CRO', 'OTHER')),
+
+    CONSTRAINT CK_BUSINESS_APPROVAL
+        CHECK (APPROVAL_STATUS IN ('PENDING', 'APPROVED', 'REJECTED'))
+);
+
+COMMENT ON TABLE BUSINESS IS '병원/제약사/연구기관 사업자 정보';
+
+
+-- =============================================================
+-- 3. DISEASE
+-- =============================================================
+
+CREATE TABLE DISEASE (
+    DISEASE_NO      NUMBER          NOT NULL,
+    SOURCE_TYPE     VARCHAR2(30)    DEFAULT 'LOCAL' NOT NULL,
+    SOURCE_CODE     VARCHAR2(100),
+    DISEASE_NAME    VARCHAR2(300)   NOT NULL,
+    ENGLISH_NAME    VARCHAR2(300),
+    CATEGORY        VARCHAR2(100),
+    DESCRIPTION     CLOB,
+    SYMPTOM_TEXT    CLOB,
+    SOURCE_URL      VARCHAR2(1000),
+    CREATED_AT      DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT      DATE,
+
+    CONSTRAINT PK_DISEASE PRIMARY KEY (DISEASE_NO),
+    CONSTRAINT UQ_DISEASE_SOURCE_CODE UNIQUE (SOURCE_CODE),
+    CONSTRAINT CK_DISEASE_SOURCE
+        CHECK (SOURCE_TYPE IN ('ORPHADATA', 'LOCAL', 'OTHER_API'))
+);
+
+COMMENT ON TABLE DISEASE IS '희귀·난치질환 기본 정보';
+
+
+-- =============================================================
+-- 4. CLINICAL TRIAL
+-- =============================================================
+
+CREATE TABLE CLINICAL_TRIAL (
+    TRIAL_NO                NUMBER          NOT NULL,
+    NCT_ID                  VARCHAR2(30),
+    BUSINESS_NO             NUMBER,
+
+    SOURCE_TYPE             VARCHAR2(20)    NOT NULL,
+    TITLE                   VARCHAR2(500)   NOT NULL,
+    OFFICIAL_TITLE          VARCHAR2(1000),
+    BRIEF_SUMMARY           CLOB,
+
+    PHASE                   VARCHAR2(100),
+    STUDY_TYPE              VARCHAR2(100),
+    RECRUITMENT_STATUS      VARCHAR2(50)    NOT NULL,
+
+    ELIGIBILITY_TEXT        CLOB,
+    SEX                     VARCHAR2(20),
+    MIN_AGE                 VARCHAR2(50),
+    MAX_AGE                 VARCHAR2(50),
+
+    ENROLLMENT_TARGET       NUMBER,
+    ENROLLMENT_CURRENT      NUMBER          DEFAULT 0 NOT NULL,
+
+    LEAD_SPONSOR            VARCHAR2(300),
+    INSTITUTION_NAME        VARCHAR2(300),
+    LOCATION_TEXT           CLOB,
+
+    CONTACT_NAME            VARCHAR2(100),
+    CONTACT_PHONE           VARCHAR2(50),
+    CONTACT_EMAIL           VARCHAR2(200),
+
+    -- ClinicalTrials.gov는 YYYY-MM 같이 부분 날짜가 올 수 있어
+    -- MVP에서는 ISO 문자열로 저장하여 원본 정확도를 보존한다.
+    START_DATE_TEXT         VARCHAR2(20),
+    COMPLETION_DATE_TEXT    VARCHAR2(20),
+
+    REVIEW_STATUS           VARCHAR2(20)    DEFAULT 'DRAFT' NOT NULL,
+    REJECT_REASON           VARCHAR2(1000),
+
+    VIEW_COUNT              NUMBER          DEFAULT 0 NOT NULL,
+    CREATED_AT              DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT              DATE,
+
+    CONSTRAINT PK_CLINICAL_TRIAL PRIMARY KEY (TRIAL_NO),
+    CONSTRAINT UQ_CLINICAL_TRIAL_NCT UNIQUE (NCT_ID),
+
+    CONSTRAINT FK_TRIAL_BUSINESS
+        FOREIGN KEY (BUSINESS_NO)
+        REFERENCES BUSINESS (BUSINESS_NO),
+
+    CONSTRAINT CK_TRIAL_SOURCE
+        CHECK (SOURCE_TYPE IN ('API', 'BUSINESS')),
+
+    CONSTRAINT CK_TRIAL_REVIEW
+        CHECK (REVIEW_STATUS IN ('DRAFT', 'PENDING', 'APPROVED', 'REJECTED')),
+
+    CONSTRAINT CK_TRIAL_SEX
+        CHECK (SEX IS NULL OR SEX IN ('ALL', 'MALE', 'FEMALE')),
+
+    CONSTRAINT CK_TRIAL_ENROLLMENT
+        CHECK (ENROLLMENT_CURRENT >= 0
+           AND (ENROLLMENT_TARGET IS NULL OR ENROLLMENT_TARGET >= 0))
+);
+
+COMMENT ON TABLE CLINICAL_TRIAL IS '외부 API 및 사업자 등록 임상시험 통합 테이블';
+COMMENT ON COLUMN CLINICAL_TRIAL.SOURCE_TYPE IS 'API / BUSINESS';
+COMMENT ON COLUMN CLINICAL_TRIAL.REVIEW_STATUS IS
+'API 데이터는 APPROVED로 취급, 사업자 등록 데이터는 DRAFT/PENDING/APPROVED/REJECTED';
+
+
+-- =============================================================
+-- 5. TRIAL <-> DISEASE N:M
+-- =============================================================
+
+CREATE TABLE TRIAL_DISEASE (
+    TRIAL_NO        NUMBER NOT NULL,
+    DISEASE_NO      NUMBER NOT NULL,
+
+    CONSTRAINT PK_TRIAL_DISEASE
+        PRIMARY KEY (TRIAL_NO, DISEASE_NO),
+
+    CONSTRAINT FK_TRIAL_DISEASE_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_TRIAL_DISEASE_DISEASE
+        FOREIGN KEY (DISEASE_NO)
+        REFERENCES DISEASE (DISEASE_NO)
+        ON DELETE CASCADE
+);
+
+
+-- =============================================================
+-- 6. FAVORITES
+-- =============================================================
+
+CREATE TABLE FAVORITE_DISEASE (
+    MEMBER_NO       NUMBER NOT NULL,
+    DISEASE_NO      NUMBER NOT NULL,
+    CREATED_AT      DATE DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_FAVORITE_DISEASE
+        PRIMARY KEY (MEMBER_NO, DISEASE_NO),
+
+    CONSTRAINT FK_FAV_DISEASE_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_FAV_DISEASE_DISEASE
+        FOREIGN KEY (DISEASE_NO)
+        REFERENCES DISEASE (DISEASE_NO)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE FAVORITE_TRIAL (
+    MEMBER_NO       NUMBER NOT NULL,
+    TRIAL_NO        NUMBER NOT NULL,
+    CREATED_AT      DATE DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_FAVORITE_TRIAL
+        PRIMARY KEY (MEMBER_NO, TRIAL_NO),
+
+    CONSTRAINT FK_FAV_TRIAL_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_FAV_TRIAL_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO)
+        ON DELETE CASCADE
+);
+
+
+-- =============================================================
+-- 7. USER -> BUSINESS PARTICIPATION INQUIRY
+-- =============================================================
+
+CREATE TABLE TRIAL_INQUIRY (
+    INQUIRY_NO      NUMBER          NOT NULL,
+    MEMBER_NO       NUMBER          NOT NULL,
+    TRIAL_NO        NUMBER          NOT NULL,
+    BUSINESS_NO     NUMBER,
+
+    SUBJECT         VARCHAR2(200)   NOT NULL,
+    QUESTION        CLOB            NOT NULL,
+    ANSWER          CLOB,
+
+    STATUS          VARCHAR2(20)    DEFAULT 'WAITING' NOT NULL,
+    CREATED_AT      DATE            DEFAULT SYSDATE NOT NULL,
+    ANSWERED_AT     DATE,
+
+    CONSTRAINT PK_TRIAL_INQUIRY PRIMARY KEY (INQUIRY_NO),
+
+    CONSTRAINT FK_INQUIRY_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT FK_INQUIRY_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO),
+
+    CONSTRAINT FK_INQUIRY_BUSINESS
+        FOREIGN KEY (BUSINESS_NO)
+        REFERENCES BUSINESS (BUSINESS_NO),
+
+    CONSTRAINT CK_INQUIRY_STATUS
+        CHECK (STATUS IN ('WAITING', 'ANSWERED', 'CLOSED'))
+);
+
+COMMENT ON TABLE TRIAL_INQUIRY IS '사용자의 임상시험 참여 문의 및 사업자 답변';
+
+
+-- =============================================================
+-- 8. TRIAL PARTICIPATION / APPLICATION
+-- 화면의 '참여 완료 시험', 사업자의 '참여 현황'을 지원
+-- =============================================================
+
+CREATE TABLE TRIAL_PARTICIPATION (
+    PARTICIPATION_NO    NUMBER          NOT NULL,
+    MEMBER_NO           NUMBER          NOT NULL,
+    TRIAL_NO            NUMBER          NOT NULL,
+    BUSINESS_NO         NUMBER,
+
+    STATUS              VARCHAR2(30)    DEFAULT 'APPLIED' NOT NULL,
+
+    APPLIED_AT          DATE            DEFAULT SYSDATE NOT NULL,
+    APPROVED_AT         DATE,
+    STARTED_AT          DATE,
+    COMPLETED_AT        DATE,
+
+    CONSTRAINT PK_TRIAL_PARTICIPATION PRIMARY KEY (PARTICIPATION_NO),
+
+    CONSTRAINT UQ_TRIAL_PARTICIPATION
+        UNIQUE (MEMBER_NO, TRIAL_NO),
+
+    CONSTRAINT FK_PARTICIPATION_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT FK_PARTICIPATION_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO),
+
+    CONSTRAINT FK_PARTICIPATION_BUSINESS
+        FOREIGN KEY (BUSINESS_NO)
+        REFERENCES BUSINESS (BUSINESS_NO),
+
+    CONSTRAINT CK_PARTICIPATION_STATUS
+        CHECK (STATUS IN (
+            'APPLIED',
+            'APPROVED',
+            'PARTICIPATING',
+            'COMPLETED',
+            'REJECTED',
+            'WITHDRAWN'
+        ))
+);
+
+COMMENT ON TABLE TRIAL_PARTICIPATION IS
+'임상시험 참여 신청 및 진행 상태. 마이페이지 참여내역/사업자 모집현황에 사용';
+
+
+-- =============================================================
+-- 9. PREMIUM SUBSCRIPTION
+-- =============================================================
+
+CREATE TABLE BUSINESS_SUBSCRIPTION (
+    SUBSCRIPTION_NO     NUMBER          NOT NULL,
+    BUSINESS_NO         NUMBER          NOT NULL,
+
+    PLAN_TYPE           VARCHAR2(20)    DEFAULT 'FREE' NOT NULL,
+    STATUS              VARCHAR2(20)    DEFAULT 'ACTIVE' NOT NULL,
+
+    MONTHLY_FEE         NUMBER          DEFAULT 0 NOT NULL,
+
+    START_DATE          DATE,
+    END_DATE            DATE,
+
+    CREATED_AT          DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT          DATE,
+
+    CONSTRAINT PK_BUSINESS_SUBSCRIPTION PRIMARY KEY (SUBSCRIPTION_NO),
+
+    CONSTRAINT FK_SUBSCRIPTION_BUSINESS
+        FOREIGN KEY (BUSINESS_NO)
+        REFERENCES BUSINESS (BUSINESS_NO),
+
+    CONSTRAINT CK_SUBSCRIPTION_PLAN
+        CHECK (PLAN_TYPE IN ('FREE', 'PREMIUM')),
+
+    CONSTRAINT CK_SUBSCRIPTION_STATUS
+        CHECK (STATUS IN ('PENDING', 'ACTIVE', 'EXPIRED', 'CANCELED')),
+
+    CONSTRAINT CK_SUBSCRIPTION_FEE
+        CHECK (MONTHLY_FEE >= 0)
+);
+
+-- 한 사업자에 ACTIVE 구독은 하나만 허용
+CREATE UNIQUE INDEX UQ_BUSINESS_ACTIVE_SUBSCRIPTION
+ON BUSINESS_SUBSCRIPTION (
+    CASE WHEN STATUS = 'ACTIVE' THEN BUSINESS_NO END
+);
+
+COMMENT ON TABLE BUSINESS_SUBSCRIPTION IS '사업자 FREE/PREMIUM 이용 이력';
+
+
+-- =============================================================
+-- 10. PAYMENT
+-- 실제 PG 연동 전에도 결제상태를 시뮬레이션/관리할 수 있도록 구성
+-- =============================================================
+
+CREATE TABLE PAYMENT (
+    PAYMENT_NO         NUMBER          NOT NULL,
+    SUBSCRIPTION_NO    NUMBER          NOT NULL,
+
+    AMOUNT             NUMBER          DEFAULT 0 NOT NULL,
+    PAYMENT_METHOD     VARCHAR2(30)    DEFAULT 'MANUAL' NOT NULL,
+    STATUS             VARCHAR2(20)    DEFAULT 'PENDING' NOT NULL,
+
+    TRANSACTION_ID     VARCHAR2(100),
+    PAID_AT            DATE,
+    CREATED_AT         DATE            DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_PAYMENT PRIMARY KEY (PAYMENT_NO),
+    CONSTRAINT UQ_PAYMENT_TRANSACTION UNIQUE (TRANSACTION_ID),
+
+    CONSTRAINT FK_PAYMENT_SUBSCRIPTION
+        FOREIGN KEY (SUBSCRIPTION_NO)
+        REFERENCES BUSINESS_SUBSCRIPTION (SUBSCRIPTION_NO),
+
+    CONSTRAINT CK_PAYMENT_STATUS
+        CHECK (STATUS IN ('PENDING', 'PAID', 'CANCELED', 'REFUNDED')),
+
+    CONSTRAINT CK_PAYMENT_METHOD
+        CHECK (PAYMENT_METHOD IN ('MANUAL', 'TEST', 'PG')),
+
+    CONSTRAINT CK_PAYMENT_AMOUNT
+        CHECK (AMOUNT >= 0)
+);
+
+COMMENT ON TABLE PAYMENT IS '프리미엄 서비스 결제 내역';
+
+
+-- =============================================================
+-- 11. PREMIUM TRIAL PROMOTION
+-- =============================================================
+
+CREATE TABLE TRIAL_PROMOTION (
+    PROMOTION_NO      NUMBER          NOT NULL,
+    TRIAL_NO          NUMBER          NOT NULL,
+    BUSINESS_NO       NUMBER          NOT NULL,
+    SUBSCRIPTION_NO   NUMBER,
+
+    STATUS            VARCHAR2(20)    DEFAULT 'PENDING' NOT NULL,
+    START_DATE        DATE,
+    END_DATE          DATE,
+    REJECT_REASON     VARCHAR2(1000),
+
+    CREATED_AT        DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT        DATE,
+
+    CONSTRAINT PK_TRIAL_PROMOTION PRIMARY KEY (PROMOTION_NO),
+
+    CONSTRAINT FK_PROMOTION_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO),
+
+    CONSTRAINT FK_PROMOTION_BUSINESS
+        FOREIGN KEY (BUSINESS_NO)
+        REFERENCES BUSINESS (BUSINESS_NO),
+
+    CONSTRAINT FK_PROMOTION_SUBSCRIPTION
+        FOREIGN KEY (SUBSCRIPTION_NO)
+        REFERENCES BUSINESS_SUBSCRIPTION (SUBSCRIPTION_NO),
+
+    CONSTRAINT CK_PROMOTION_STATUS
+        CHECK (STATUS IN ('PENDING', 'ACTIVE', 'ENDED', 'REJECTED'))
+);
+
+-- 같은 임상시험은 동시에 하나의 ACTIVE 프로모션만 허용
+CREATE UNIQUE INDEX UQ_TRIAL_ACTIVE_PROMOTION
+ON TRIAL_PROMOTION (
+    CASE WHEN STATUS = 'ACTIVE' THEN TRIAL_NO END
+);
+
+COMMENT ON TABLE TRIAL_PROMOTION IS '메인/검색 상단 프리미엄 임상시험 노출';
+
+
+-- =============================================================
+-- 12. TRIAL VIEW HISTORY
+-- 사업자 프리미엄 통계 / 관리자 통계용
+-- =============================================================
+
+CREATE TABLE TRIAL_VIEW_HISTORY (
+    VIEW_NO          NUMBER NOT NULL,
+    TRIAL_NO         NUMBER NOT NULL,
+    MEMBER_NO        NUMBER,
+    VIEWED_AT        DATE DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_TRIAL_VIEW_HISTORY PRIMARY KEY (VIEW_NO),
+
+    CONSTRAINT FK_VIEW_TRIAL
+        FOREIGN KEY (TRIAL_NO)
+        REFERENCES CLINICAL_TRIAL (TRIAL_NO)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_VIEW_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO)
+);
+
+COMMENT ON TABLE TRIAL_VIEW_HISTORY IS '임상시험 상세 조회 로그 및 통계 원천 데이터';
+
+
+-- =============================================================
+-- 13. NOTIFICATION
+-- 사용자 마이페이지 알림/메시지 영역 지원
+-- =============================================================
+
+CREATE TABLE NOTIFICATION (
+    NOTIFICATION_NO     NUMBER          NOT NULL,
+    MEMBER_NO           NUMBER          NOT NULL,
+
+    NOTIFICATION_TYPE   VARCHAR2(30)    NOT NULL,
+    TITLE               VARCHAR2(200)   NOT NULL,
+    MESSAGE             VARCHAR2(2000)  NOT NULL,
+    TARGET_URL          VARCHAR2(1000),
+
+    IS_READ             CHAR(1)         DEFAULT 'N' NOT NULL,
+    CREATED_AT          DATE            DEFAULT SYSDATE NOT NULL,
+    READ_AT             DATE,
+
+    CONSTRAINT PK_NOTIFICATION PRIMARY KEY (NOTIFICATION_NO),
+
+    CONSTRAINT FK_NOTIFICATION_MEMBER
+        FOREIGN KEY (MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO)
+        ON DELETE CASCADE,
+
+    CONSTRAINT CK_NOTIFICATION_READ
+        CHECK (IS_READ IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE NOTIFICATION IS '검수결과, 답변완료, 모집상태 변경 등의 알림';
+
+
+-- =============================================================
+-- 14. NOTICE
+-- 공지사항 관리
+-- =============================================================
+
+CREATE TABLE NOTICE (
+    NOTICE_NO        NUMBER          NOT NULL,
+    ADMIN_MEMBER_NO  NUMBER          NOT NULL,
+
+    TITLE            VARCHAR2(300)   NOT NULL,
+    CONTENT          CLOB            NOT NULL,
+    IS_PINNED        CHAR(1)         DEFAULT 'N' NOT NULL,
+
+    CREATED_AT       DATE            DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT       DATE,
+
+    CONSTRAINT PK_NOTICE PRIMARY KEY (NOTICE_NO),
+
+    CONSTRAINT FK_NOTICE_ADMIN
+        FOREIGN KEY (ADMIN_MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT CK_NOTICE_PINNED
+        CHECK (IS_PINNED IN ('Y', 'N'))
+);
+
+
+-- =============================================================
+-- 15. ADMIN REVIEW LOG
+-- 사업자/임상시험/프리미엄 승인·반려 이력
+-- =============================================================
+
+CREATE TABLE ADMIN_REVIEW_LOG (
+    REVIEW_LOG_NO      NUMBER          NOT NULL,
+    ADMIN_MEMBER_NO    NUMBER          NOT NULL,
+
+    TARGET_TYPE        VARCHAR2(30)    NOT NULL,
+    TARGET_NO          NUMBER          NOT NULL,
+
+    ACTION_TYPE        VARCHAR2(20)    NOT NULL,
+    REASON             VARCHAR2(1000),
+
+    CREATED_AT         DATE            DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_ADMIN_REVIEW_LOG PRIMARY KEY (REVIEW_LOG_NO),
+
+    CONSTRAINT FK_REVIEW_LOG_ADMIN
+        FOREIGN KEY (ADMIN_MEMBER_NO)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT CK_REVIEW_LOG_TARGET
+        CHECK (TARGET_TYPE IN ('BUSINESS', 'TRIAL', 'PROMOTION', 'SUBSCRIPTION')),
+
+    CONSTRAINT CK_REVIEW_LOG_ACTION
+        CHECK (ACTION_TYPE IN ('APPROVE', 'REJECT', 'ACTIVATE', 'END'))
+);
+
+COMMENT ON TABLE ADMIN_REVIEW_LOG IS '관리자의 승인/반려/활성화 처리 이력';
+
+
+-- =============================================================
+-- 16. INDEXES
+-- =============================================================
+
+CREATE INDEX IDX_MEMBER_ROLE_STATUS
+    ON MEMBER (ROLE_CODE, STATUS);
+
+CREATE INDEX IDX_BUSINESS_APPROVAL
+    ON BUSINESS (APPROVAL_STATUS, CREATED_AT);
+
+CREATE INDEX IDX_TRIAL_BUSINESS
+    ON CLINICAL_TRIAL (BUSINESS_NO);
+
+CREATE INDEX IDX_TRIAL_SOURCE_STATUS
+    ON CLINICAL_TRIAL (SOURCE_TYPE, REVIEW_STATUS);
+
+CREATE INDEX IDX_TRIAL_RECRUITMENT
+    ON CLINICAL_TRIAL (RECRUITMENT_STATUS);
+
+CREATE INDEX IDX_TRIAL_TITLE
+    ON CLINICAL_TRIAL (TITLE);
+
+CREATE INDEX IDX_DISEASE_NAME
+    ON DISEASE (DISEASE_NAME);
+
+CREATE INDEX IDX_INQUIRY_BUSINESS_STATUS
+    ON TRIAL_INQUIRY (BUSINESS_NO, STATUS);
+
+CREATE INDEX IDX_INQUIRY_MEMBER
+    ON TRIAL_INQUIRY (MEMBER_NO, CREATED_AT);
+
+CREATE INDEX IDX_PARTICIPATION_TRIAL_STATUS
+    ON TRIAL_PARTICIPATION (TRIAL_NO, STATUS);
+
+CREATE INDEX IDX_SUBSCRIPTION_BUSINESS
+    ON BUSINESS_SUBSCRIPTION (BUSINESS_NO, STATUS);
+
+CREATE INDEX IDX_PAYMENT_STATUS_DATE
+    ON PAYMENT (STATUS, PAID_AT);
+
+CREATE INDEX IDX_PROMOTION_STATUS_DATE
+    ON TRIAL_PROMOTION (STATUS, START_DATE, END_DATE);
+
+CREATE INDEX IDX_VIEW_TRIAL_DATE
+    ON TRIAL_VIEW_HISTORY (TRIAL_NO, VIEWED_AT);
+
+CREATE INDEX IDX_NOTIFICATION_MEMBER_READ
+    ON NOTIFICATION (MEMBER_NO, IS_READ, CREATED_AT);
+
+
+-- =============================================================
+-- 17. BUSINESS TRIAL STATS VIEW
+-- 사업자 프리미엄 통계:
+-- 조회수 / 관심등록 / 문의 / 참여
+-- =============================================================
+
+CREATE OR REPLACE VIEW VW_BUSINESS_TRIAL_STATS AS
+SELECT
+    T.TRIAL_NO,
+    T.BUSINESS_NO,
+    T.TITLE,
+    T.RECRUITMENT_STATUS,
+    T.ENROLLMENT_TARGET,
+    T.ENROLLMENT_CURRENT,
+
+    (SELECT COUNT(*)
+       FROM TRIAL_VIEW_HISTORY V
+      WHERE V.TRIAL_NO = T.TRIAL_NO) AS VIEW_COUNT,
+
+    (SELECT COUNT(*)
+       FROM FAVORITE_TRIAL F
+      WHERE F.TRIAL_NO = T.TRIAL_NO) AS FAVORITE_COUNT,
+
+    (SELECT COUNT(*)
+       FROM TRIAL_INQUIRY I
+      WHERE I.TRIAL_NO = T.TRIAL_NO) AS INQUIRY_COUNT,
+
+    (SELECT COUNT(*)
+       FROM TRIAL_PARTICIPATION P
+      WHERE P.TRIAL_NO = T.TRIAL_NO
+        AND P.STATUS IN ('APPROVED', 'PARTICIPATING', 'COMPLETED')
+    ) AS PARTICIPANT_COUNT
+
+FROM CLINICAL_TRIAL T
+WHERE T.SOURCE_TYPE = 'BUSINESS';
+
+
+-- =============================================================
+-- 18. ACTIVE PREMIUM TRIAL VIEW
+-- 메인/검색 프리미엄 영역 조회용
+-- =============================================================
+
+CREATE OR REPLACE VIEW VW_ACTIVE_PREMIUM_TRIAL AS
+SELECT
+    P.PROMOTION_NO,
+    P.TRIAL_NO,
+    P.BUSINESS_NO,
+    T.TITLE,
+    T.PHASE,
+    T.RECRUITMENT_STATUS,
+    T.INSTITUTION_NAME,
+    P.START_DATE,
+    P.END_DATE
+FROM TRIAL_PROMOTION P
+JOIN CLINICAL_TRIAL T
+  ON T.TRIAL_NO = P.TRIAL_NO
+WHERE P.STATUS = 'ACTIVE'
+  AND T.REVIEW_STATUS = 'APPROVED'
+  AND (P.START_DATE IS NULL OR P.START_DATE <= SYSDATE)
+  AND (P.END_DATE IS NULL OR P.END_DATE >= SYSDATE);
+
+
+-- =============================================================
+-- 19. ADMIN DASHBOARD VIEW
+-- 회원/사업자/임상시험/문의/프리미엄/매출
+-- =============================================================
+
+CREATE OR REPLACE VIEW VW_ADMIN_DASHBOARD AS
+SELECT
+    (SELECT COUNT(*)
+       FROM MEMBER
+      WHERE ROLE_CODE = 'USER'
+        AND STATUS = 'ACTIVE') AS USER_COUNT,
+
+    (SELECT COUNT(*)
+       FROM BUSINESS
+      WHERE APPROVAL_STATUS = 'APPROVED') AS BUSINESS_COUNT,
+
+    (SELECT COUNT(*)
+       FROM CLINICAL_TRIAL
+      WHERE REVIEW_STATUS = 'APPROVED') AS TRIAL_COUNT,
+
+    (SELECT COUNT(*)
+       FROM TRIAL_INQUIRY) AS INQUIRY_COUNT,
+
+    (SELECT COUNT(*)
+       FROM BUSINESS_SUBSCRIPTION
+      WHERE PLAN_TYPE = 'PREMIUM'
+        AND STATUS = 'ACTIVE') AS PREMIUM_BUSINESS_COUNT,
+
+    (SELECT NVL(SUM(AMOUNT), 0)
+       FROM PAYMENT
+      WHERE STATUS = 'PAID'
+        AND PAID_AT >= TRUNC(SYSDATE, 'MM')
+        AND PAID_AT < ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+    ) AS MONTH_REVENUE
+
+FROM DUAL;
+
+
+-- =============================================================
+-- 20. OPTIONAL SEED EXAMPLES
+-- 실제 프로젝트에서는 비밀번호를 반드시 BCrypt 등으로 암호화한 값을 사용.
+-- 아래 데이터는 예시이므로 기본적으로 주석 처리한다.
+-- =============================================================
+
+/*
+INSERT INTO MEMBER (
+    MEMBER_NO, EMAIL, PASSWORD_HASH, MEMBER_NAME,
+    ROLE_CODE, STATUS
+) VALUES (
+    SEQ_MEMBER.NEXTVAL,
+    'admin@meditrials.local',
+    '{bcrypt-hash}',
+    '관리자',
+    'ADMIN',
+    'ACTIVE'
+);
+
+COMMIT;
+*/
+
+
+-- =============================================================
+-- 21. APPLICATION RULES (DB + SERVICE)
+-- =============================================================
+-- 1) BUSINESS.APPROVAL_STATUS = 'APPROVED' 인 사업자만
+--    자체 임상시험 등록/수정/검수 요청 가능.
+--
+-- 2) 사업자 등록 임상시험은:
+--    DRAFT -> PENDING -> APPROVED 또는 REJECTED
+--
+-- 3) 일반 사용자 화면에는:
+--    REVIEW_STATUS = 'APPROVED' 인 자체 등록 임상시험만 공개.
+--
+-- 4) ClinicalTrials.gov API 데이터는 SOURCE_TYPE='API',
+--    REVIEW_STATUS='APPROVED' 로 취급.
+--
+-- 5) 참여 문의는 로그인 USER만 작성.
+--
+-- 6) BUSINESS는 자신의 임상시험에 속한 문의만 조회/답변.
+--
+-- 7) PREMIUM 우선 노출은
+--    BUSINESS_SUBSCRIPTION.STATUS='ACTIVE' + PLAN_TYPE='PREMIUM'
+--    이고 TRIAL_PROMOTION.STATUS='ACTIVE' 인 경우만 사용.
+--
+-- 8) 관리자 승인/반려 시 ADMIN_REVIEW_LOG에 처리 이력을 남길 것.
+--
+-- 9) 조회 통계는 TRIAL_VIEW_HISTORY를 원천으로 사용하고,
+--    CLINICAL_TRIAL.VIEW_COUNT는 빠른 화면 표시용 캐시로 사용할 수 있음.
+--
+-- 10) 실제 PG 결제를 구현하지 않는 MVP에서는 PAYMENT_METHOD='TEST'
+--     또는 'MANUAL'로 처리 가능.
+-- =============================================================
