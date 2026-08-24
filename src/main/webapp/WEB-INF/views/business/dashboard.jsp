@@ -1,18 +1,125 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>사업자 대시보드 | MediTrials</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
-</head><body>
-<div class="page-shell"><%@ include file="/WEB-INF/views/common/sidebar-business.jsp" %><main class="dashboard-main">
-<div class="dashboard-head"><h1>사업자 대시보드</h1><span class="badge badge-green">승인 사업자</span></div>
-<div class="stat-grid">
-  <div class="stat-card"><span>전체 임상시험</span><strong>8</strong></div>
-  <div class="stat-card"><span>검수 대기</span><strong>2</strong></div>
-  <div class="stat-card"><span>승인 완료</span><strong>5</strong></div>
-  <div class="stat-card"><span>반려</span><strong>1</strong></div>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.List" %>
+<%@ page import="meditrials.meditrials.business.trial.vo.BusinessTrialVO" %>
+<%@ page import="meditrials.meditrials.business.vo.BusinessVO" %>
+<%@ page import="org.springframework.web.util.HtmlUtils" %>
+<%!
+    private String h(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
+    }
+
+    private String approvalLabel(String value) {
+        if ("APPROVED".equals(value)) return "승인 완료";
+        if ("REJECTED".equals(value)) return "반려";
+        return "승인 대기";
+    }
+
+    private String approvalClass(String value) {
+        if ("APPROVED".equals(value)) return "badge-green";
+        if ("REJECTED".equals(value)) return "badge-red";
+        return "badge-amber";
+    }
+
+    private String reviewLabel(String value) {
+        if ("DRAFT".equals(value)) return "임시저장";
+        if ("PENDING".equals(value)) return "검수대기";
+        if ("APPROVED".equals(value)) return "승인";
+        if ("REJECTED".equals(value)) return "반려";
+        return value == null ? "-" : value;
+    }
+
+    private String formatDate(java.time.LocalDateTime value) {
+        return value == null ? "-" : value.format(DateTimeFormatter.ofPattern("MM.dd"));
+    }
+%>
+<%
+    BusinessVO business = request.getAttribute("business") instanceof BusinessVO value ? value : null;
+    List<BusinessTrialVO> trials = request.getAttribute("trials") instanceof List<?> list
+            ? (List<BusinessTrialVO>) list : List.of();
+    Number pendingCount = request.getAttribute("pendingCount") instanceof Number value ? value : 0;
+    Number approvedCount = request.getAttribute("approvedCount") instanceof Number value ? value : 0;
+    Number rejectedCount = request.getAttribute("rejectedCount") instanceof Number value ? value : 0;
+    boolean canManageTrials = Boolean.TRUE.equals(request.getAttribute("canManageTrials"));
+%>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사업자 대시보드 | MediTrials</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
+</head>
+<body>
+<div class="page-shell">
+  <%@ include file="/WEB-INF/views/common/sidebar-business.jsp" %>
+  <main class="dashboard-main">
+    <div class="dashboard-head">
+      <div>
+        <h1>사업자 대시보드</h1>
+        <% if (business != null) { %>
+          <p class="text-muted" style="margin:8px 0 0;"><%= h(business.getOrgName()) %></p>
+        <% } %>
+      </div>
+      <% if (business != null) { %>
+        <span class="badge <%= approvalClass(business.getApprovalStatus()) %>"><%= h(approvalLabel(business.getApprovalStatus())) %></span>
+      <% } %>
+    </div>
+
+    <% if (business == null) { %>
+      <div class="notice" style="margin-bottom:20px;">로그인 계정에 연결된 기관 정보를 찾을 수 없습니다.</div>
+    <% } else if (!canManageTrials) { %>
+      <div class="notice" style="margin-bottom:20px;">
+        <% if ("REJECTED".equals(business.getApprovalStatus())) { %>
+          <strong>사업자 가입 신청이 반려되었습니다.</strong><br>
+          반려 사유: <%= business.getRejectReason() == null ? "관리자에게 문의해주세요." : h(business.getRejectReason()) %><br>
+          현재는 임상시험 등록·수정·검수 요청 기능을 사용할 수 없습니다.
+        <% } else { %>
+          <strong>현재 관리자 승인 대기 중입니다.</strong><br>
+          로그인과 사업자 센터 확인은 가능하지만 임상시험 등록·수정·검수 요청은 승인 완료 후 활성화됩니다.
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="stat-grid">
+      <div class="stat-card"><span>전체 임상시험</span><strong><%= trials.size() %></strong></div>
+      <div class="stat-card"><span>검수 대기</span><strong><%= pendingCount.longValue() %></strong></div>
+      <div class="stat-card"><span>승인 완료</span><strong><%= approvedCount.longValue() %></strong></div>
+      <div class="stat-card"><span>반려</span><strong><%= rejectedCount.longValue() %></strong></div>
+    </div>
+
+    <div class="table-card">
+      <div class="row-between" style="padding:20px 22px 0;">
+        <h3 style="padding:0;">최근 임상시험</h3>
+        <a class="btn btn-sm btn-outline" href="${pageContext.request.contextPath}/business/trials">전체 보기</a>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>제목</th><th>검수상태</th><th>등록일</th><th>관리</th></tr>
+        </thead>
+        <tbody>
+        <% if (trials.isEmpty()) { %>
+          <tr><td colspan="4" class="text-center text-muted">등록한 임상시험이 없습니다.</td></tr>
+        <% } else { %>
+          <% for (int i = 0; i < Math.min(5, trials.size()); i++) { BusinessTrialVO trial = trials.get(i); %>
+            <tr>
+              <td><%= h(trial.getTitle()) %></td>
+              <td><%= h(reviewLabel(trial.getReviewStatus())) %></td>
+              <td><%= formatDate(trial.getCreatedAt()) %></td>
+              <td>
+                <% if (canManageTrials) { %>
+                  <a class="btn btn-sm btn-outline" href="${pageContext.request.contextPath}/business/trials/<%= trial.getTrialNo() %>/edit">수정</a>
+                <% } else { %>
+                  <span class="text-muted">승인 후 이용</span>
+                <% } %>
+              </td>
+            </tr>
+          <% } %>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </main>
 </div>
-<div class="content-grid-2">
-  <div class="table-card"><h3>최근 임상시험</h3><table class="table"><thead><tr><th>제목</th><th>단계</th><th>검수상태</th><th>모집상태</th></tr></thead><tbody><tr><td>차세대 유전자 치료제 임상</td><td>2/3상</td><td><span class="badge badge-gray">검수대기</span></td><td><span class="badge badge-green">모집중</span></td></tr><tr><td>헌팅턴병 치료제 효과 평가</td><td>2상</td><td><span class="badge badge-green">승인</span></td><td><span class="badge badge-green">모집중</span></td></tr><tr><td>파브리병 효소대체요법</td><td>3상</td><td><span class="badge badge-red">반려</span></td><td><span class="badge badge-amber">모집예정</span></td></tr></tbody></table></div>
-  <div class="table-card"><h3>참여 문의</h3><table class="table"><thead><tr><th>문의일</th><th>임상시험</th><th>문의자</th><th>상태</th></tr></thead><tbody><tr><td>08.21</td><td>차세대 유전자 치료제</td><td>홍길동</td><td><span class="badge badge-green">답변완료</span></td></tr><tr><td>08.20</td><td>헌팅턴병 치료제</td><td>김민수</td><td><span class="badge badge-gray">답변대기</span></td></tr><tr><td>08.19</td><td>낭포성 섬유증 치료제</td><td>이영희</td><td><span class="badge badge-green">답변완료</span></td></tr></tbody></table></div>
-</div>
-</main></div><script src="${pageContext.request.contextPath}/js/meditrials.js"></script></body></html>
+</body>
+</html>

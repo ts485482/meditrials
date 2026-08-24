@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.business.dao.AdminBusinessDAO">
+
+    <resultMap id="businessResultMap" type="meditrials.meditrials.business.vo.BusinessVO">
+        <id property="businessNo" column="BUSINESS_NO"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="orgType" column="ORG_TYPE"/>
+        <result property="businessRegNo" column="BUSINESS_REG_NO"/>
+        <result property="phone" column="PHONE"/>
+        <result property="email" column="EMAIL"/>
+        <result property="address" column="ADDRESS"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="approvalStatus" column="APPROVAL_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="approvedAt" column="APPROVED_AT"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="businessColumns">
+        BUSINESS_NO,
+        MEMBER_NO,
+        ORG_NAME,
+        ORG_TYPE,
+        BUSINESS_REG_NO,
+        PHONE,
+        EMAIL,
+        ADDRESS,
+        DESCRIPTION,
+        APPROVAL_STATUS,
+        REJECT_REASON,
+        APPROVED_AT,
+        CREATED_AT,
+        UPDATED_AT
+    </sql>
+
+    <select id="selectBusinessList" resultMap="businessResultMap">
+        SELECT <include refid="businessColumns"/>
+          FROM BUSINESS
+         ORDER BY
+               CASE APPROVAL_STATUS
+                   WHEN 'PENDING' THEN 1
+                   WHEN 'REJECTED' THEN 2
+                   ELSE 3
+               END,
+               CREATED_AT DESC,
+               BUSINESS_NO DESC
+    </select>
+
+    <select id="selectBusinessByNo" resultMap="businessResultMap">
+        SELECT <include refid="businessColumns"/>
+          FROM BUSINESS
+         WHERE BUSINESS_NO = #{businessNo}
+    </select>
+
+    <update id="approveBusiness">
+        UPDATE BUSINESS
+           SET APPROVAL_STATUS = 'APPROVED',
+               REJECT_REASON = NULL,
+               APPROVED_AT = SYSDATE,
+               UPDATED_AT = SYSDATE
+         WHERE BUSINESS_NO = #{businessNo}
+           AND APPROVAL_STATUS = 'PENDING'
+    </update>
+
+    <update id="rejectBusiness">
+        UPDATE BUSINESS
+           SET APPROVAL_STATUS = 'REJECTED',
+               REJECT_REASON = #{rejectReason},
+               APPROVED_AT = NULL,
+               UPDATED_AT = SYSDATE
+         WHERE BUSINESS_NO = #{businessNo}
+           AND APPROVAL_STATUS = 'PENDING'
+    </update>
+
+    <insert id="insertReviewLog">
+        INSERT INTO ADMIN_REVIEW_LOG (
+            REVIEW_LOG_NO,
+            ADMIN_MEMBER_NO,
+            TARGET_TYPE,
+            TARGET_NO,
+            ACTION_TYPE,
+            REASON,
+            CREATED_AT
+        ) VALUES (
+            SEQ_ADMIN_REVIEW_LOG.NEXTVAL,
+            #{adminMemberNo},
+            'BUSINESS',
+            #{businessNo},
+            #{actionType},
+            #{reason,jdbcType=VARCHAR},
+            SYSDATE
+        )
+    </insert>
+
+</mapper>

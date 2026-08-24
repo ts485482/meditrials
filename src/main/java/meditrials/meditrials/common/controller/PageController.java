@@ -21,20 +21,20 @@ public class PageController {
     @GetMapping("/login")
     public String login(
             @RequestParam(name = "required", defaultValue = "false") boolean required,
+            @RequestParam(name = "businessSignup", defaultValue = "") String businessSignup,
             Model model) {
 
         if (required) {
             model.addAttribute(
                     "loginNotice",
                     "로그인이 필요한 메뉴입니다. 로그인 후 이용해주세요.");
+        } else if ("success".equals(businessSignup)) {
+            model.addAttribute(
+                    "loginNotice",
+                    "사업자 가입 신청이 완료되었습니다. 로그인은 가능하며, 임상시험 등록은 관리자 승인 후 사용할 수 있습니다.");
         }
 
         return "auth/login";
-    }
-
-    @GetMapping("/business/signup")
-    public String businessSignup() {
-        return "business/signup";
     }
 
 
@@ -43,11 +43,6 @@ public class PageController {
         return "mypage/main";
     }
 
-
-    @GetMapping("/business")
-    public String businessDashboard() {
-        return "business/dashboard";
-    }
 
 
     @GetMapping("/business/plans")
@@ -63,11 +58,6 @@ public class PageController {
     @GetMapping("/admin")
     public String adminDashboard() {
         return "admin/dashboard";
-    }
-
-    @GetMapping("/admin/businesses")
-    public String adminBusinesses() {
-        return "admin/businesses";
     }
 
 

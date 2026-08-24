@@ -1,0 +1,110 @@
+.business-signup-card {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.business-signup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.business-signup-head .section-title {
+  margin-bottom: 8px;
+}
+
+.business-signup-head p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.business-signup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+
+.business-signup-section {
+  padding: 22px;
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.business-signup-section h2 {
+  margin: 0 0 20px;
+  color: #173f79;
+  font-size: 19px;
+}
+
+.business-signup-guide {
+  margin: 7px 0 0;
+  color: #78869a;
+  font-size: 12px;
+}
+
+.business-signup-message,
+.business-signup-field-message {
+  display: none;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.business-signup-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.business-signup-message-error {
+  color: #b93640;
+  background: #fff1f2;
+  border: 1px solid #f5cbd0;
+}
+
+.business-signup-field-message {
+  margin-top: 8px;
+}
+
+.business-signup-field-message.is-success {
+  display: block;
+  color: #18825e;
+}
+
+.business-signup-field-message.is-error {
+  display: block;
+  color: #b93640;
+}
+
+.business-signup-card .form-control.is-invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.business-approval-guide {
+  margin-top: 24px;
+  line-height: 1.7;
+}
+
+.business-signup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.business-signup-actions .btn {
+  min-width: 130px;
+}
+
+@media (max-width: 800px) {
+  .business-signup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .business-signup-head {
+    flex-direction: column;
+  }
+}

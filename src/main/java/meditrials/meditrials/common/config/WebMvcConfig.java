@@ -23,6 +23,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/business/**",
                         "/admin/**",
                         "/trials/*/inquiries/**")
-                .excludePathPatterns("/business/signup");
+                .excludePathPatterns(
+                        "/business/signup",
+                        "/business/check-registration-no");
     }
 }

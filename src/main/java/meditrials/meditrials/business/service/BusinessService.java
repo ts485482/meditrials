@@ -11,4 +11,11 @@ public interface BusinessService {
     BusinessVO getBusinessByNo(Long businessNo);
 
     BusinessVO getBusinessByMemberNo(Long memberNo);
+
+    BusinessVO registerBusiness(
+            String email,
+            String rawPassword,
+            String memberName,
+            String memberPhone,
+            BusinessVO business);
 }

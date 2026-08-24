@@ -53,7 +53,8 @@
     <select id="countByBusinessRegNo" resultType="int">
         SELECT COUNT(*)
           FROM BUSINESS
-         WHERE BUSINESS_REG_NO = #{businessRegNo}
+         WHERE UPPER(REGEXP_REPLACE(BUSINESS_REG_NO, '[^A-Za-z0-9]', ''))
+             = UPPER(REGEXP_REPLACE(#{businessRegNo}, '[^A-Za-z0-9]', ''))
     </select>
 
     <select id="selectBusinessByNo" resultMap="businessResultMap">
