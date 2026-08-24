@@ -304,3 +304,123 @@
 .disease-detail-muted {
     color: var(--muted);
 }
+
+/* 질환 상세: 실제 관련 임상시험 미리보기 */
+.disease-related-section {
+    overflow: hidden;
+}
+
+.disease-related-heading {
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.disease-related-subtitle {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.disease-related-source-counts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.disease-related-trial-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.disease-related-trial-card {
+    display: block;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.disease-related-trial-card:hover {
+    transform: translateY(-1px);
+    border-color: #b8d4f4;
+    box-shadow: 0 6px 18px rgba(20, 55, 100, .07);
+}
+
+.disease-related-trial-card.is-cris {
+    border-color: #cfe9df;
+    background: #fbfefc;
+}
+
+.disease-related-trial-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.disease-related-trial-title-wrap {
+    min-width: 0;
+}
+
+.disease-related-trial-source {
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.disease-related-trial-card h3 {
+    margin: 0;
+    color: #173f79;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.disease-related-trial-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 11px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.disease-related-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.disease-related-empty strong,
+.disease-related-empty span {
+    display: block;
+}
+
+.disease-related-empty strong {
+    margin-bottom: 6px;
+    color: #173f79;
+}
+
+@media (max-width: 700px) {
+    .disease-related-heading,
+    .disease-related-trial-top {
+        flex-direction: column;
+    }
+
+    .disease-related-source-counts {
+        justify-content: flex-start;
+    }
+
+    .disease-related-actions .btn {
+        width: 100%;
+    }
+}
+
+.badge-cris {
+    background: #e9f8f2;
+    color: #15805f;
+}

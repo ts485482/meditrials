@@ -1,5 +1,7 @@
 package meditrials.meditrials.disease.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -13,10 +15,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import meditrials.meditrials.disease.service.DiseaseService;
 import meditrials.meditrials.disease.vo.DiseaseSearchResultVO;
 import meditrials.meditrials.disease.vo.DiseaseVO;
+import meditrials.meditrials.trial.service.TrialService;
+import meditrials.meditrials.trial.vo.TrialSearchResultVO;
+import meditrials.meditrials.trial.vo.TrialVO;
 
 @Controller
 @RequestMapping("/diseases")
 public class DiseaseController {
+
+    private static final int RELATED_TRIAL_PREVIEW_LIMIT = 4;
 
     private static final Set<String> ALLOWED_CATEGORIES = Set.of(
             "ALL",
@@ -27,9 +34,11 @@ public class DiseaseController {
             "CHRONIC");
 
     private final DiseaseService diseaseService;
+    private final TrialService trialService;
 
-    public DiseaseController(DiseaseService diseaseService) {
+    public DiseaseController(DiseaseService diseaseService, TrialService trialService) {
         this.diseaseService = diseaseService;
+        this.trialService = trialService;
     }
 
     @GetMapping
@@ -62,8 +71,28 @@ public class DiseaseController {
             return "redirect:/diseases?notFound=true";
         }
 
+        TrialSearchResultVO relatedResult = trialService.searchTrials(
+                disease.getDiseaseName(),
+                "ALL",
+                "ALL",
+                "DOMESTIC");
+
+        List<TrialVO> relatedTrials = previewTrials(relatedResult.getTrials());
+
         model.addAttribute("disease", disease);
+        model.addAttribute("relatedTrials", relatedTrials);
+        model.addAttribute("relatedCrisCount", relatedResult.getCrisTotalCount());
+        model.addAttribute("relatedClinicalTrialsCount", relatedResult.getClinicalTrialsTotalCount());
+        model.addAttribute("relatedTrialApiAvailable", relatedResult.isApiAvailable());
         return "disease/detail";
+    }
+
+    private List<TrialVO> previewTrials(List<TrialVO> trials) {
+        if (trials == null || trials.isEmpty()) {
+            return List.of();
+        }
+        int endIndex = Math.min(RELATED_TRIAL_PREVIEW_LIMIT, trials.size());
+        return new ArrayList<>(trials.subList(0, endIndex));
     }
 
     private String normalizeCategory(String category) {

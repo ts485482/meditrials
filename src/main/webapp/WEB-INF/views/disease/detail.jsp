@@ -1,10 +1,69 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
+<%@ page import="java.util.List" %>
 <%@ page import="meditrials.meditrials.disease.vo.DiseaseVO" %>
+<%@ page import="meditrials.meditrials.trial.vo.TrialVO" %>
 <%@ page import="org.springframework.web.util.HtmlUtils" %>
+<%!
+    private String h(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
+    }
+
+    private boolean isCris(TrialVO trial) {
+        return trial != null
+                && trial.getNctId() != null
+                && trial.getNctId().toUpperCase().startsWith("KCT");
+    }
+
+    private String sourceLabel(TrialVO trial) {
+        return isCris(trial) ? "CRIS" : "ClinicalTrials.gov";
+    }
+
+    private String statusLabel(String value) {
+        if (value == null || value.isBlank()) return "상태 미확인";
+        return switch (value) {
+            case "CRIS_REGISTERED" -> "CRIS 등록";
+            case "RECRUITING" -> "모집중";
+            case "NOT_YET_RECRUITING" -> "모집예정";
+            case "ACTIVE_NOT_RECRUITING" -> "진행중·모집종료";
+            case "ENROLLING_BY_INVITATION" -> "초대 모집";
+            case "COMPLETED" -> "완료";
+            case "SUSPENDED" -> "일시중단";
+            case "TERMINATED" -> "조기종료";
+            case "WITHDRAWN" -> "철회";
+            default -> value;
+        };
+    }
+
+    private String statusClass(String value) {
+        if ("RECRUITING".equals(value)) return "badge-green";
+        if ("NOT_YET_RECRUITING".equals(value)) return "badge-blue";
+        if ("CRIS_REGISTERED".equals(value)) return "badge-cris";
+        if ("COMPLETED".equals(value)) return "badge-gray";
+        return "badge-amber";
+    }
+
+    private String phaseLabel(String value) {
+        if (value == null || value.isBlank()) return "단계 미지정";
+        String normalized = value.toUpperCase();
+        if (normalized.contains("PHASE1") && normalized.contains("PHASE2")) return "1/2상";
+        if (normalized.contains("PHASE2") && normalized.contains("PHASE3")) return "2/3상";
+        if (normalized.contains("EARLY_PHASE1")) return "초기 1상";
+        if (normalized.contains("PHASE1")) return "1상";
+        if (normalized.contains("PHASE2")) return "2상";
+        if (normalized.contains("PHASE3")) return "3상";
+        if (normalized.contains("PHASE4")) return "4상";
+        if (normalized.contains("NA")) return "해당없음";
+        return value;
+    }
+%>
 <%
     DiseaseVO disease = request.getAttribute("disease") instanceof DiseaseVO value ? value : null;
     String diseaseName = disease == null || disease.getDiseaseName() == null
             ? "질환정보" : HtmlUtils.htmlEscape(disease.getDiseaseName());
+    String rawDiseaseName = disease == null || disease.getDiseaseName() == null
+            ? "" : disease.getDiseaseName();
     String englishName = disease == null || disease.getEnglishName() == null
             ? "" : HtmlUtils.htmlEscape(disease.getEnglishName());
     String category = disease == null || disease.getCategory() == null
@@ -32,7 +91,15 @@
 
     String sourceUrl = disease == null || disease.getSourceUrl() == null
             ? "" : HtmlUtils.htmlEscape(disease.getSourceUrl());
-    Integer relatedTrialCount = disease == null ? null : disease.getRelatedTrialCount();
+
+    List<TrialVO> relatedTrials = request.getAttribute("relatedTrials") instanceof List<?> list
+            ? (List<TrialVO>) list : List.of();
+    Integer relatedCrisCount = request.getAttribute("relatedCrisCount") instanceof Integer value ? value : null;
+    Integer relatedClinicalTrialsCount = request.getAttribute("relatedClinicalTrialsCount") instanceof Integer value ? value : null;
+    boolean relatedTrialApiAvailable = !(request.getAttribute("relatedTrialApiAvailable") instanceof Boolean value) || value;
+    String relatedSearchUrl = request.getContextPath()
+            + "/trials?scope=DOMESTIC&keyword="
+            + URLEncoder.encode(rawDiseaseName, StandardCharsets.UTF_8);
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -96,20 +163,57 @@
           <% } %>
         </section>
 
-        <section class="detail-section">
-          <div class="row-between">
-            <h2 class="mb-0">관련 임상시험</h2>
-            <span class="badge badge-gray">
-              <% if (relatedTrialCount == null) { %>
-                확인 불가
-              <% } else { %>
-                <%= relatedTrialCount %>건
+        <section class="detail-section disease-related-section">
+          <div class="row-between disease-related-heading">
+            <div>
+              <h2 class="mb-0">관련 임상시험</h2>
+              <p class="disease-related-subtitle">국내 CRIS 한글 연구를 우선하고, ClinicalTrials.gov의 대한민국 수행 연구를 함께 표시합니다.</p>
+            </div>
+            <div class="disease-related-source-counts">
+              <% if (relatedCrisCount != null) { %>
+                <span class="badge badge-cris">CRIS <%= relatedCrisCount %>건</span>
               <% } %>
-            </span>
+              <% if (relatedClinicalTrialsCount != null) { %>
+                <span class="badge badge-green">ClinicalTrials.gov 한국 <%= relatedClinicalTrialsCount %>건</span>
+              <% } %>
+            </div>
           </div>
-          <div class="disease-related-empty">
-            현재는 ClinicalTrials.gov에서 해당 질환의 관련 연구 건수를 확인합니다.
-            다음 임상시험 연동 단계에서 실제 모집 중 시험 목록과 상세 화면을 연결합니다.
+
+          <% if (relatedTrials.isEmpty()) { %>
+            <div class="disease-related-empty">
+              <strong>현재 표시할 국내 관련 임상시험이 없습니다.</strong>
+              <span><%= relatedTrialApiAvailable
+                      ? "해외 포함 전체 검색에서 추가 연구를 확인할 수 있습니다."
+                      : "외부 임상시험 API 연결 상태를 확인해주세요." %></span>
+            </div>
+          <% } else { %>
+            <div class="disease-related-trial-list">
+              <% for (TrialVO trial : relatedTrials) { %>
+                <a class="disease-related-trial-card <%= isCris(trial) ? "is-cris" : "" %>"
+                   href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>">
+                  <div class="disease-related-trial-top">
+                    <div class="disease-related-trial-title-wrap">
+                      <div class="disease-related-trial-source"><%= h(trial.getNctId()) %> · <%= h(sourceLabel(trial)) %></div>
+                      <h3><%= h(trial.getTitle()) %></h3>
+                    </div>
+                    <span class="badge <%= statusClass(trial.getRecruitmentStatus()) %>"><%= h(statusLabel(trial.getRecruitmentStatus())) %></span>
+                  </div>
+                  <div class="disease-related-trial-meta">
+                    <span class="badge badge-blue"><%= h(phaseLabel(trial.getPhase())) %></span>
+                    <% if (trial.getInstitutionName() != null && !trial.getInstitutionName().isBlank()) { %>
+                      <span><%= h(trial.getInstitutionName()) %></span>
+                    <% } %>
+                    <% if (trial.getStartDateText() != null && !trial.getStartDateText().isBlank()) { %>
+                      <span><%= h(trial.getStartDateText()) %><%= trial.getCompletionDateText() == null || trial.getCompletionDateText().isBlank() ? "" : " ~ " + h(trial.getCompletionDateText()) %></span>
+                    <% } %>
+                  </div>
+                </a>
+              <% } %>
+            </div>
+          <% } %>
+
+          <div class="disease-related-actions">
+            <a class="btn btn-light" href="<%= relatedSearchUrl %>">국내 관련 임상시험 전체 보기 →</a>
           </div>
         </section>
       </div>
@@ -125,12 +229,16 @@
           <span>DB에 등록한 한국어 질환 설명 · 주요 증상 정보를 우선 표시</span>
         </div>
         <div class="disease-source-row">
-          <strong>MedlinePlus</strong>
-          <span>한국어 설명이 없는 질환의 영문 일반 설명 보조 자료</span>
+          <strong>질병관리청 CRIS</strong>
+          <span>국내 한글 임상연구 및 치료·중재 연구 우선 조회</span>
         </div>
         <div class="disease-source-row">
           <strong>ClinicalTrials.gov</strong>
-          <span>질환별 관련 임상시험 건수</span>
+          <span>대한민국에서 수행되는 국제 등록 임상시험 보강</span>
+        </div>
+        <div class="disease-source-row">
+          <strong>MedlinePlus</strong>
+          <span>한국어 설명이 없는 질환의 영문 일반 설명 보조 자료</span>
         </div>
         <% if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://")) { %>
           <a class="btn btn-light w-100" href="<%= sourceUrl %>" target="_blank" rel="noopener noreferrer">

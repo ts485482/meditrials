@@ -92,7 +92,6 @@ public class DiseaseServiceImpl implements DiseaseService {
         }
 
         enrichDetailFromMedlinePlus(disease);
-        disease.setRelatedTrialCount(countRelatedTrials(disease));
         return disease;
     }
 
