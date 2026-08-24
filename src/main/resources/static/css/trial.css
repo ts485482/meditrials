@@ -55,3 +55,9 @@
 /* MediTrials 사업자 직접 등록 + 관리자 승인 시험 */
 .trial-result-card-business{border-color:#cbdcf5;background:#fbfdff}
 .trial-result-card-business:hover{border-color:#8bb6eb;box-shadow:0 8px 24px rgba(23,105,210,.09)}
+
+/* 임상시험 상세 우측 액션 버튼 정렬 */
+.trial-contact-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.trial-contact-actions form{display:block;width:100%;margin:0}
+.trial-contact-actions .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;margin:0;box-sizing:border-box;text-align:center;line-height:1.35}
+.trial-action-notice{margin-top:18px;padding:11px 12px;border:1px solid #f0ddb1;border-radius:8px;background:#fff9ea;color:#81611d;font-size:12px;line-height:1.6}

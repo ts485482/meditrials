@@ -73,6 +73,11 @@
             ? "MediTrials 사업자 등록"
             : (cris ? "질병관리청 CRIS" : "ClinicalTrials.gov");
     boolean favoriteTrial = Boolean.TRUE.equals(request.getAttribute("favoriteTrial"));
+    boolean inquiryAvailable = businessTrial
+            && trial != null
+            && "APPROVED".equalsIgnoreCase(trial.getReviewStatus())
+            && trial.getBusinessNo() != null;
+    boolean inquiryUnavailable = "true".equalsIgnoreCase(request.getParameter("inquiryUnavailable"));
     Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
     boolean loginUser = "USER".equals(loginRoleValue);
     boolean loggedIn = loginRoleValue != null;
@@ -163,28 +168,37 @@
         <% } else if (cris) { %>
           <p><strong>등록기관</strong><br>질병관리청 임상연구정보서비스(CRIS)</p>
           <p><strong>CRIS 등록번호</strong><br><%= externalId %></p>
-          <a class="btn btn-light w-100" href="https://cris.nih.go.kr" target="_blank" rel="noopener noreferrer">CRIS에서 등록번호 검색</a>
         <% } else { %>
           <p><strong>연락 담당자</strong><br><%= trial == null || trial.getContactName() == null ? "공개 연락처 없음" : h(trial.getContactName()) %></p>
           <p><strong>연락처</strong><br><%= trial == null || trial.getContactPhone() == null ? "정보 없음" : h(trial.getContactPhone()) %></p>
           <p><strong>이메일</strong><br><%= trial == null || trial.getContactEmail() == null ? "정보 없음" : h(trial.getContactEmail()) %></p>
-          <% if (trial != null && trial.getNctId() != null && !trial.getNctId().isBlank()) { %>
-            <a class="btn btn-light w-100" href="https://clinicaltrials.gov/study/<%= h(trial.getNctId()) %>" target="_blank" rel="noopener noreferrer">ClinicalTrials.gov 원문 보기</a>
-          <% } %>
         <% } %>
 
-        <% if (loginUser) { %>
-          <form method="post" action="${pageContext.request.contextPath}/mypage/favorites/trials/<%= trial.getTrialNo() %>">
-            <button class="btn <%= favoriteTrial ? "btn-light" : "btn-outline" %> w-100 mt-20" type="submit">
-              <%= favoriteTrial ? "♥ 관심 해제" : "♡ 관심 등록" %>
-            </button>
-          </form>
-        <% } else if (!loggedIn) { %>
-          <a class="btn btn-outline w-100 mt-20" href="${pageContext.request.contextPath}/login?required=true">♡ 관심 등록</a>
-        <% } else { %>
-          <button class="btn btn-outline w-100 mt-20" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">♡ 관심 등록</button>
+        <% if (inquiryUnavailable) { %>
+          <div class="trial-action-notice">외부 등록 임상시험은 MediTrials 참여 문의 대상이 아닙니다. 공식 등록 페이지에서 상세정보와 참여 방법을 확인해주세요.</div>
         <% } %>
-        <a class="btn btn-primary w-100 mt-20" href="${pageContext.request.contextPath}/trials/<%= trial == null ? "" : trial.getTrialNo() %>/inquiries/new">참여 문의</a>
+
+        <div class="trial-contact-actions">
+          <% if (loginUser) { %>
+            <form method="post" action="${pageContext.request.contextPath}/mypage/favorites/trials/<%= trial.getTrialNo() %>">
+              <button class="btn <%= favoriteTrial ? "btn-light" : "btn-outline" %> w-100" type="submit">
+                <%= favoriteTrial ? "♥ 관심 해제" : "♡ 관심 등록" %>
+              </button>
+            </form>
+          <% } else if (!loggedIn) { %>
+            <a class="btn btn-outline w-100" href="${pageContext.request.contextPath}/login?required=true">♡ 관심 등록</a>
+          <% } else { %>
+            <button class="btn btn-outline w-100" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">♡ 관심 등록</button>
+          <% } %>
+
+          <% if (inquiryAvailable) { %>
+            <a class="btn btn-primary w-100" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/inquiries/new">참여 문의</a>
+          <% } else if (cris) { %>
+            <a class="btn btn-primary w-100" href="https://cris.nih.go.kr" target="_blank" rel="noopener noreferrer">CRIS 공식 상세정보 확인 ↗</a>
+          <% } else if (!businessTrial && trial != null && trial.getNctId() != null && !trial.getNctId().isBlank()) { %>
+            <a class="btn btn-primary w-100" href="https://clinicaltrials.gov/study/<%= h(trial.getNctId()) %>" target="_blank" rel="noopener noreferrer">ClinicalTrials.gov 상세보기 ↗</a>
+          <% } %>
+        </div>
 
         <p class="trial-source-note">
           <%= businessTrial

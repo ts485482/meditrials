@@ -52,6 +52,11 @@ public class TrialInquiryServiceImpl implements TrialInquiryService {
         if (trial == null) {
             throw new IllegalArgumentException("문의 대상 임상시험을 찾을 수 없습니다.");
         }
+        if (!"BUSINESS".equalsIgnoreCase(trial.getSourceType())
+                || !"APPROVED".equalsIgnoreCase(trial.getReviewStatus())
+                || trial.getBusinessNo() == null) {
+            throw new IllegalArgumentException("MediTrials에서 승인된 사업자 임상시험에만 참여 문의를 등록할 수 있습니다.");
+        }
 
         TrialInquiryVO inquiry = new TrialInquiryVO();
         inquiry.setMemberNo(memberNo);

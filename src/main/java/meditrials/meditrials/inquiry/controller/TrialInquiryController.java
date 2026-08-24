@@ -50,6 +50,9 @@ public class TrialInquiryController {
         if (trial == null) {
             return "redirect:/trials?notFound=true";
         }
+        if (!isInquiryAvailable(trial)) {
+            return "redirect:/trials/" + trialNo + "?inquiryUnavailable=true";
+        }
 
         model.addAttribute("trial", trial);
         return "trial/inquiry-form";
@@ -72,6 +75,9 @@ public class TrialInquiryController {
         TrialVO trial = trialService.getTrialDetail(trialNo);
         if (trial == null) {
             return "redirect:/trials?notFound=true";
+        }
+        if (!isInquiryAvailable(trial)) {
+            return "redirect:/trials/" + trialNo + "?inquiryUnavailable=true";
         }
 
         if (!privacyAgreed) {
@@ -220,6 +226,14 @@ public class TrialInquiryController {
         model.addAttribute("question", question == null ? "" : question.trim());
         model.addAttribute("formError", errorMessage);
         return "trial/inquiry-form";
+    }
+
+
+    private boolean isInquiryAvailable(TrialVO trial) {
+        return trial != null
+                && "BUSINESS".equalsIgnoreCase(trial.getSourceType())
+                && "APPROVED".equalsIgnoreCase(trial.getReviewStatus())
+                && trial.getBusinessNo() != null;
     }
 
     private BusinessVO getLoginBusiness(HttpServletRequest request) {
