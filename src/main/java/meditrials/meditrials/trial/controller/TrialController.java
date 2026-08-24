@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import meditrials.meditrials.common.constant.SessionConstants;
+import meditrials.meditrials.favorite.service.FavoriteService;
 import meditrials.meditrials.trial.service.TrialService;
 import meditrials.meditrials.trial.vo.TrialSearchResultVO;
 import meditrials.meditrials.trial.vo.TrialVO;
@@ -17,6 +21,8 @@ import meditrials.meditrials.trial.vo.TrialVO;
 @Controller
 @RequestMapping("/trials")
 public class TrialController {
+
+    private static final String ROLE_USER = "USER";
 
     private static final Set<String> ALLOWED_STATUSES = Set.of(
             "ALL",
@@ -37,9 +43,11 @@ public class TrialController {
             "GLOBAL");
 
     private final TrialService trialService;
+    private final FavoriteService favoriteService;
 
-    public TrialController(TrialService trialService) {
+    public TrialController(TrialService trialService, FavoriteService favoriteService) {
         this.trialService = trialService;
+        this.favoriteService = favoriteService;
     }
 
     @GetMapping
@@ -80,14 +88,40 @@ public class TrialController {
     }
 
     @GetMapping("/{id}")
-    public String trialDetail(@PathVariable("id") Long trialNo, Model model) {
+    public String trialDetail(
+            @PathVariable("id") Long trialNo,
+            HttpServletRequest request,
+            Model model) {
+
         TrialVO trial = trialService.getTrialDetail(trialNo);
         if (trial == null) {
             return "redirect:/trials?notFound=true";
         }
 
+        Long loginUserMemberNo = getLoginUserMemberNo(request);
         model.addAttribute("trial", trial);
+        model.addAttribute(
+                "favoriteTrial",
+                favoriteService.isTrialFavorite(loginUserMemberNo, trialNo));
         return "trial/detail";
+    }
+
+    private Long getLoginUserMemberNo(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        Object roleCode = session.getAttribute(SessionConstants.LOGIN_MEMBER_ROLE);
+        if (!ROLE_USER.equals(roleCode)) {
+            return null;
+        }
+
+        Object memberNo = session.getAttribute(SessionConstants.LOGIN_MEMBER_NO);
+        if (memberNo instanceof Number number) {
+            return number.longValue();
+        }
+        return null;
     }
 
     private String normalize(String value, Set<String> allowed, String defaultValue) {

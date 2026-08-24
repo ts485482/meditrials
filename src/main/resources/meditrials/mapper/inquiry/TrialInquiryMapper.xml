@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.inquiry.dao.TrialInquiryDAO">
+
+    <resultMap id="trialInquiryResultMap" type="meditrials.meditrials.inquiry.vo.TrialInquiryVO">
+        <id property="inquiryNo" column="INQUIRY_NO"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="trialNo" column="TRIAL_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="subject" column="SUBJECT"/>
+        <result property="question" column="QUESTION"/>
+        <result property="answer" column="ANSWER"/>
+        <result property="status" column="STATUS"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="answeredAt" column="ANSWERED_AT"/>
+        <result property="trialTitle" column="TRIAL_TITLE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="sourceType" column="SOURCE_TYPE"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+    </resultMap>
+
+    <insert id="insertInquiry" parameterType="meditrials.meditrials.inquiry.vo.TrialInquiryVO">
+        <selectKey keyProperty="inquiryNo" resultType="long" order="BEFORE">
+            SELECT SEQ_TRIAL_INQUIRY.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TRIAL_INQUIRY (
+            INQUIRY_NO,
+            MEMBER_NO,
+            TRIAL_NO,
+            BUSINESS_NO,
+            SUBJECT,
+            QUESTION,
+            ANSWER,
+            STATUS,
+            CREATED_AT,
+            ANSWERED_AT
+        ) VALUES (
+            #{inquiryNo,jdbcType=NUMERIC},
+            #{memberNo,jdbcType=NUMERIC},
+            #{trialNo,jdbcType=NUMERIC},
+            #{businessNo,jdbcType=NUMERIC},
+            #{subject,jdbcType=VARCHAR},
+            #{question,jdbcType=CLOB},
+            NULL,
+            'WAITING',
+            SYSDATE,
+            NULL
+        )
+    </insert>
+
+    <select id="selectMemberInquiries" resultMap="trialInquiryResultMap">
+        SELECT
+            I.INQUIRY_NO,
+            I.MEMBER_NO,
+            I.TRIAL_NO,
+            I.BUSINESS_NO,
+            I.SUBJECT,
+            I.QUESTION,
+            I.ANSWER,
+            I.STATUS,
+            I.CREATED_AT,
+            I.ANSWERED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.SOURCE_TYPE,
+            T.INSTITUTION_NAME
+        FROM TRIAL_INQUIRY I
+        JOIN CLINICAL_TRIAL T
+          ON T.TRIAL_NO = I.TRIAL_NO
+        WHERE I.MEMBER_NO = #{memberNo}
+        ORDER BY I.CREATED_AT DESC, I.INQUIRY_NO DESC
+    </select>
+
+    <select id="selectMemberInquiry" resultMap="trialInquiryResultMap">
+        SELECT
+            I.INQUIRY_NO,
+            I.MEMBER_NO,
+            I.TRIAL_NO,
+            I.BUSINESS_NO,
+            I.SUBJECT,
+            I.QUESTION,
+            I.ANSWER,
+            I.STATUS,
+            I.CREATED_AT,
+            I.ANSWERED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.SOURCE_TYPE,
+            T.INSTITUTION_NAME
+        FROM TRIAL_INQUIRY I
+        JOIN CLINICAL_TRIAL T
+          ON T.TRIAL_NO = I.TRIAL_NO
+        WHERE I.MEMBER_NO = #{memberNo}
+          AND I.INQUIRY_NO = #{inquiryNo}
+    </select>
+
+</mapper>

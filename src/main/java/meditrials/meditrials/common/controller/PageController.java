@@ -38,25 +38,12 @@ public class PageController {
         return "business/signup";
     }
 
-    @GetMapping("/trials/{id}/inquiries/new")
-    public String inquiryForm(@PathVariable String id) {
-        return "trial/inquiry-form";
-    }
 
     @GetMapping("/mypage")
     public String mypage() {
         return "mypage/main";
     }
 
-    @GetMapping("/mypage/favorites")
-    public String favorites() {
-        return "mypage/favorites";
-    }
-
-    @GetMapping("/mypage/inquiries")
-    public String myInquiries() {
-        return "mypage/inquiries";
-    }
 
     @GetMapping("/business")
     public String businessDashboard() {
