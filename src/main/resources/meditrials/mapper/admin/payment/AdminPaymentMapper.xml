@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.payment.dao.AdminPaymentDAO">
+
+    <resultMap id="adminPaymentResultMap" type="meditrials.meditrials.admin.payment.vo.AdminPaymentVO">
+        <id property="paymentNo" column="PAYMENT_NO"/>
+        <result property="subscriptionNo" column="SUBSCRIPTION_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="planType" column="PLAN_TYPE"/>
+        <result property="monthlyFee" column="MONTHLY_FEE"/>
+        <result property="subscriptionStatus" column="SUBSCRIPTION_STATUS"/>
+        <result property="subscriptionStartDate" column="SUBSCRIPTION_START_DATE"/>
+        <result property="subscriptionEndDate" column="SUBSCRIPTION_END_DATE"/>
+        <result property="amount" column="AMOUNT"/>
+        <result property="paymentMethod" column="PAYMENT_METHOD"/>
+        <result property="paymentStatus" column="PAYMENT_STATUS"/>
+        <result property="transactionId" column="TRANSACTION_ID"/>
+        <result property="paidAt" column="PAID_AT"/>
+        <result property="createdAt" column="PAYMENT_CREATED_AT"/>
+    </resultMap>
+
+    <sql id="paymentColumns">
+        P.PAYMENT_NO,
+        P.SUBSCRIPTION_NO,
+        S.BUSINESS_NO,
+        B.ORG_NAME,
+        S.PLAN_TYPE,
+        S.MONTHLY_FEE,
+        S.STATUS AS SUBSCRIPTION_STATUS,
+        S.START_DATE AS SUBSCRIPTION_START_DATE,
+        S.END_DATE AS SUBSCRIPTION_END_DATE,
+        P.AMOUNT,
+        P.PAYMENT_METHOD,
+        P.STATUS AS PAYMENT_STATUS,
+        P.TRANSACTION_ID,
+        P.PAID_AT,
+        P.CREATED_AT AS PAYMENT_CREATED_AT
+    </sql>
+
+    <select id="selectPaymentList" resultMap="adminPaymentResultMap">
+        SELECT <include refid="paymentColumns"/>
+          FROM PAYMENT P
+          JOIN BUSINESS_SUBSCRIPTION S
+            ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = S.BUSINESS_NO
+         ORDER BY
+               CASE P.STATUS
+                   WHEN 'PENDING' THEN 1
+                   WHEN 'PAID' THEN 2
+                   WHEN 'REFUNDED' THEN 3
+                   ELSE 4
+               END,
+               P.CREATED_AT DESC,
+               P.PAYMENT_NO DESC
+    </select>
+
+    <select id="selectPaymentByNo" resultMap="adminPaymentResultMap">
+        SELECT <include refid="paymentColumns"/>
+          FROM PAYMENT P
+          JOIN BUSINESS_SUBSCRIPTION S
+            ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = S.BUSINESS_NO
+         WHERE P.PAYMENT_NO = #{paymentNo}
+    </select>
+
+    <select id="countOtherActiveSubscriptions" resultType="int">
+        SELECT COUNT(*)
+          FROM BUSINESS_SUBSCRIPTION
+         WHERE BUSINESS_NO = #{businessNo}
+           AND STATUS = 'ACTIVE'
+           AND SUBSCRIPTION_NO != #{subscriptionNo}
+    </select>
+
+    <update id="markPaymentPaid">
+        UPDATE PAYMENT
+           SET STATUS = 'PAID',
+               PAID_AT = SYSDATE,
+               TRANSACTION_ID = NVL(TRANSACTION_ID, 'TEST-' || PAYMENT_NO || '-' || TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'))
+         WHERE PAYMENT_NO = #{paymentNo}
+           AND STATUS = 'PENDING'
+    </update>
+
+    <update id="activateSubscription">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET STATUS = 'ACTIVE',
+               START_DATE = SYSDATE,
+               END_DATE = ADD_MONTHS(SYSDATE, 1),
+               UPDATED_AT = SYSDATE
+         WHERE SUBSCRIPTION_NO = #{subscriptionNo}
+           AND STATUS = 'PENDING'
+    </update>
+
+    <update id="cancelPendingPayment">
+        UPDATE PAYMENT
+           SET STATUS = 'CANCELED'
+         WHERE PAYMENT_NO = #{paymentNo}
+           AND STATUS = 'PENDING'
+    </update>
+
+    <update id="cancelPendingSubscription">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET STATUS = 'CANCELED',
+               END_DATE = SYSDATE,
+               UPDATED_AT = SYSDATE
+         WHERE SUBSCRIPTION_NO = #{subscriptionNo}
+           AND STATUS = 'PENDING'
+    </update>
+
+    <update id="refundPaidPayment">
+        UPDATE PAYMENT
+           SET STATUS = 'REFUNDED'
+         WHERE PAYMENT_NO = #{paymentNo}
+           AND STATUS = 'PAID'
+    </update>
+
+    <update id="cancelActiveSubscription">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET STATUS = 'CANCELED',
+               END_DATE = SYSDATE,
+               UPDATED_AT = SYSDATE
+         WHERE SUBSCRIPTION_NO = #{subscriptionNo}
+           AND STATUS = 'ACTIVE'
+    </update>
+
+    <insert id="insertSubscriptionReviewLog">
+        INSERT INTO ADMIN_REVIEW_LOG (
+            REVIEW_LOG_NO,
+            ADMIN_MEMBER_NO,
+            TARGET_TYPE,
+            TARGET_NO,
+            ACTION_TYPE,
+            REASON,
+            CREATED_AT
+        ) VALUES (
+            SEQ_ADMIN_REVIEW_LOG.NEXTVAL,
+            #{adminMemberNo},
+            'SUBSCRIPTION',
+            #{subscriptionNo},
+            #{actionType},
+            #{reason,jdbcType=VARCHAR},
+            SYSDATE
+        )
+    </insert>
+
+</mapper>

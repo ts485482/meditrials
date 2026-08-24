@@ -1,13 +1,178 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>요금제/프리미엄 | MediTrials</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
-</head><body>
-<div class="page-shell"><%@ include file="/WEB-INF/views/common/sidebar-business.jsp" %><main class="dashboard-main">
-<div class="dashboard-head"><h1>요금제 / 프리미엄</h1></div>
-<div class="plan-grid">
-  <div class="plan-card"><h2>FREE</h2><div class="price">₩0</div><ul><li>임상시험 등록/수정</li><li>참여문의 확인/답변</li><li>기본 모집상태 관리</li></ul></div>
-  <div class="plan-card premium"><span class="badge badge-blue">추천</span><h2>PREMIUM</h2><div class="price">₩99,000 <small style="font-size:14px">/월</small></div><ul><li>메인/검색 우선 노출</li><li>조회수·관심등록·문의 통계</li><li>프리미엄 임상시험 홍보</li><li>기간별 모집성과 확인</li></ul><button class="btn btn-primary w-100" data-demo-alert="프리미엄 신청이 생성됩니다.">프리미엄 이용 신청</button></div>
+<%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.Locale" %>
+<%@ page import="meditrials.meditrials.business.subscription.vo.BusinessSubscriptionVO" %>
+<%@ page import="meditrials.meditrials.business.vo.BusinessVO" %>
+<%@ page import="org.springframework.web.util.HtmlUtils" %>
+<%!
+    private String h(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
+    }
+
+    private String money(Number value) {
+        long amount = value == null ? 0L : value.longValue();
+        return NumberFormat.getNumberInstance(Locale.KOREA).format(amount);
+    }
+
+    private String formatDate(java.time.LocalDateTime value) {
+        return value == null ? "-" : value.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+    }
+
+    private String subscriptionLabel(String value) {
+        if ("PENDING".equals(value)) return "승인/결제 대기";
+        if ("ACTIVE".equals(value)) return "이용 중";
+        if ("EXPIRED".equals(value)) return "이용 만료";
+        if ("CANCELED".equals(value)) return "취소/종료";
+        return value == null ? "미신청" : value;
+    }
+
+    private String paymentLabel(String value) {
+        if ("PENDING".equals(value)) return "결제대기";
+        if ("PAID".equals(value)) return "결제완료";
+        if ("CANCELED".equals(value)) return "결제취소";
+        if ("REFUNDED".equals(value)) return "환불완료";
+        return value == null ? "-" : value;
+    }
+
+    private String statusClass(String value) {
+        if ("ACTIVE".equals(value) || "PAID".equals(value)) return "badge-green";
+        if ("PENDING".equals(value)) return "badge-amber";
+        if ("CANCELED".equals(value) || "REFUNDED".equals(value)) return "badge-red";
+        return "badge-gray";
+    }
+%>
+<%
+    BusinessVO business = request.getAttribute("business") instanceof BusinessVO value ? value : null;
+    BusinessSubscriptionVO premium = request.getAttribute("premium") instanceof BusinessSubscriptionVO value ? value : null;
+    Number premiumMonthlyFee = request.getAttribute("premiumMonthlyFee") instanceof Number value ? value : 99_000L;
+    boolean canApplyPremium = Boolean.TRUE.equals(request.getAttribute("canApplyPremium"));
+    boolean premiumRequired = Boolean.TRUE.equals(request.getAttribute("premiumRequired"));
+    String pageNotice = request.getAttribute("pageNotice") instanceof String value ? value : null;
+    String pageError = request.getAttribute("pageError") instanceof String value ? value : null;
+    boolean businessApproved = business != null && "APPROVED".equals(business.getApprovalStatus());
+    boolean premiumActive = premium != null && "ACTIVE".equals(premium.getSubscriptionStatus());
+    boolean premiumPending = premium != null && "PENDING".equals(premium.getSubscriptionStatus());
+%>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>요금제/프리미엄 | MediTrials</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
+</head>
+<body>
+<div class="page-shell">
+  <%@ include file="/WEB-INF/views/common/sidebar-business.jsp" %>
+  <main class="dashboard-main">
+    <div class="dashboard-head">
+      <div>
+        <h1>요금제 / 프리미엄</h1>
+        <p class="text-muted" style="margin:8px 0 0;">프리미엄 신청 후 관리자가 결제 완료 처리하면 PREMIUM 기능이 활성화됩니다.</p>
+      </div>
+    </div>
+
+    <% if (premiumRequired) { %>
+      <div class="notice" style="margin-bottom:18px;">통계 기능은 PREMIUM 사업자만 이용할 수 있습니다. 프리미엄을 신청하거나 현재 이용 상태를 확인해주세요.</div>
+    <% } %>
+    <% if (pageNotice != null && !pageNotice.isBlank()) { %>
+      <div class="notice" style="margin-bottom:18px;background:#e9fbf3;color:#18825e;border-color:#bfead8;"><%= h(pageNotice) %></div>
+    <% } %>
+    <% if (pageError != null && !pageError.isBlank()) { %>
+      <div class="notice" style="margin-bottom:18px;background:#fff1f2;color:#b93640;border-color:#f5cbd0;"><%= h(pageError) %></div>
+    <% } %>
+
+    <div class="plan-grid">
+      <div class="plan-card">
+        <h2>FREE</h2>
+        <div class="price">₩0</div>
+        <ul>
+          <li>임상시험 등록/수정</li>
+          <li>참여문의 확인/답변</li>
+          <li>기본 모집상태 관리</li>
+        </ul>
+      </div>
+
+      <div class="plan-card premium">
+        <span class="badge badge-blue" style="position:absolute;right:22px;top:22px;">추천</span>
+        <h2>PREMIUM</h2>
+        <div class="price">₩<%= money(premiumMonthlyFee) %> <small style="font-size:14px">/월</small></div>
+        <ul>
+          <li>메인/검색 우선 노출</li>
+          <li>조회수·관심등록·문의 통계</li>
+          <li>프리미엄 임상시험 홍보</li>
+          <li>기간별 모집성과 확인</li>
+        </ul>
+
+        <% if (canApplyPremium) { %>
+          <form action="${pageContext.request.contextPath}/business/plans/apply" method="post">
+            <button class="btn btn-primary w-100" type="submit"
+                    onclick="return confirm('PREMIUM 이용을 신청하시겠습니까?');">프리미엄 이용 신청</button>
+          </form>
+        <% } else if (!businessApproved) { %>
+          <button class="btn btn-outline w-100" type="button" disabled>사업자 승인 후 신청 가능</button>
+        <% } else if (premiumPending) { %>
+          <button class="btn btn-outline w-100" type="button" disabled>결제 처리 대기 중</button>
+        <% } else if (premiumActive) { %>
+          <button class="btn btn-success w-100" type="button" disabled>PREMIUM 이용 중</button>
+        <% } else { %>
+          <button class="btn btn-outline w-100" type="button" disabled>신청 상태 확인 중</button>
+        <% } %>
+      </div>
+    </div>
+
+    <section class="card mt-20">
+      <div class="row-between" style="align-items:flex-start;">
+        <div>
+          <h3 style="margin-bottom:6px;">현재 이용 상태</h3>
+          <p class="text-muted" style="margin-top:0;">기관: <%= business == null ? "-" : h(business.getOrgName()) %></p>
+        </div>
+        <% if (premiumActive) { %>
+          <span class="badge badge-green">PREMIUM</span>
+        <% } else { %>
+          <span class="badge badge-gray">FREE</span>
+        <% } %>
+      </div>
+
+      <div class="content-grid-2" style="margin-top:18px;">
+        <div>
+          <p><strong>현재 요금제</strong><br><%= premiumActive ? "PREMIUM" : "FREE" %></p>
+          <p><strong>사업자 승인 상태</strong><br>
+            <% if (businessApproved) { %>
+              <span class="badge badge-green">승인완료</span>
+            <% } else { %>
+              <span class="badge badge-amber">승인 전</span>
+            <% } %>
+          </p>
+        </div>
+        <div>
+          <p><strong>프리미엄 신청 상태</strong><br>
+            <span class="badge <%= statusClass(premium == null ? null : premium.getSubscriptionStatus()) %>"><%= subscriptionLabel(premium == null ? null : premium.getSubscriptionStatus()) %></span>
+          </p>
+          <p><strong>결제 상태</strong><br>
+            <span class="badge <%= statusClass(premium == null ? null : premium.getPaymentStatus()) %>"><%= paymentLabel(premium == null ? null : premium.getPaymentStatus()) %></span>
+          </p>
+        </div>
+      </div>
+
+      <% if (premium != null) { %>
+        <div class="divider"></div>
+        <div class="content-grid-2">
+          <p><strong>신청일</strong><br><%= formatDate(premium.getCreatedAt()) %></p>
+          <p><strong>결제번호</strong><br><%= premium.getPaymentNo() == null ? "-" : "P-" + premium.getPaymentNo() %></p>
+          <p><strong>이용 시작일</strong><br><%= formatDate(premium.getStartDate()) %></p>
+          <p><strong>이용 종료 예정일</strong><br><%= formatDate(premium.getEndDate()) %></p>
+        </div>
+      <% } %>
+    </section>
+
+    <% if (!businessApproved) { %>
+      <div class="notice" style="margin-top:18px;">관리자 사업자 승인이 완료되어야 프리미엄 이용 신청을 할 수 있습니다.</div>
+    <% } else if (premiumPending) { %>
+      <div class="notice" style="margin-top:18px;">MVP에서는 실제 PG 결제 대신 TEST 결제로 신청되며, 관리자가 결제 완료 처리하면 PREMIUM이 즉시 활성화됩니다.</div>
+    <% } %>
+  </main>
 </div>
-<div class="card mt-20"><h3>현재 이용 상태</h3><p>현재 요금제 <strong>FREE</strong></p><p>프리미엄 신청 상태 <span class="badge badge-gray">미신청</span></p></div>
-</main></div><script src="${pageContext.request.contextPath}/js/meditrials.js"></script></body></html>
+</body>
+</html>

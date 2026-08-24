@@ -45,15 +45,6 @@ public class PageController {
 
 
 
-    @GetMapping("/business/plans")
-    public String businessPlans() {
-        return "business/plans";
-    }
-
-    @GetMapping("/business/stats")
-    public String businessStats() {
-        return "business/stats";
-    }
 
     @GetMapping("/admin")
     public String adminDashboard() {
@@ -71,10 +62,6 @@ public class PageController {
         return "admin/plans";
     }
 
-    @GetMapping("/admin/payments")
-    public String adminPayments() {
-        return "admin/payments";
-    }
 
     @GetMapping("/admin/promotions")
     public String adminPromotions() {
