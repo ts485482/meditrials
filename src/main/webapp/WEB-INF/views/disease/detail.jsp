@@ -100,6 +100,11 @@
     String relatedSearchUrl = request.getContextPath()
             + "/trials?scope=DOMESTIC&keyword="
             + URLEncoder.encode(rawDiseaseName, StandardCharsets.UTF_8);
+
+    boolean favoriteDisease = Boolean.TRUE.equals(request.getAttribute("favoriteDisease"));
+    Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
+    boolean loginUser = "USER".equals(loginRoleValue);
+    boolean loggedIn = loginRoleValue != null;
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -128,9 +133,19 @@
           <span class="badge badge-green">HIRA</span>
         </div>
       </div>
-      <button class="btn btn-outline" type="button" disabled title="관심 질환 기능 연결 예정">
-        ♡ 관심 질환 등록
-      </button>
+      <% if (loginUser) { %>
+        <form method="post" action="${pageContext.request.contextPath}/mypage/favorites/diseases/<%= disease.getDiseaseNo() %>">
+          <button class="btn <%= favoriteDisease ? "btn-light" : "btn-outline" %>" type="submit">
+            <%= favoriteDisease ? "♥ 관심 질환 해제" : "♡ 관심 질환 등록" %>
+          </button>
+        </form>
+      <% } else if (!loggedIn) { %>
+        <a class="btn btn-outline" href="${pageContext.request.contextPath}/login?required=true">♡ 관심 질환 등록</a>
+      <% } else { %>
+        <button class="btn btn-outline" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">
+          ♡ 관심 질환 등록
+        </button>
+      <% } %>
     </div>
 
     <div class="detail-layout">

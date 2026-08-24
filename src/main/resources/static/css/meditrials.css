@@ -286,3 +286,18 @@ textarea.form-control{min-height:130px;resize:vertical}
   .premium-trial-panel{grid-column:auto}
   .footer-inner{padding:24px 0}
 }
+
+/* =========================================================
+   mypage favorite list
+   ========================================================= */
+.empty-state{
+  background:#fff;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  padding:42px 24px;
+  text-align:center;
+}
+.empty-state h3{margin:0 0 10px;color:#173f79}
+.empty-state .btn{display:inline-flex;margin-top:12px}
+.favorite-card h3{margin:0 0 8px;color:#173f79}
+.favorite-card form{margin-left:14px;flex:0 0 auto}
