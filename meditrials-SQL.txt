@@ -1,4 +1,4 @@
-DB기본구조 - Meditrials
+-- MediTrials DB 통합본 (현재 소스 기준)
 
 -- =============================================================
 -- MediTrials Database Schema (Oracle)
@@ -7,6 +7,8 @@ DB기본구조 - Meditrials
 --          favorites, inquiries/participation, premium promotion,
 --          payments, dashboard statistics
 -- Created: 2026-08-21
+-- Updated: 2026-08-24
+-- Tables: 17 (PLAN_POLICY 포함)
 -- =============================================================
 
 -- =============================================================
@@ -594,8 +596,58 @@ CREATE TABLE ADMIN_REVIEW_LOG (
 COMMENT ON TABLE ADMIN_REVIEW_LOG IS '관리자의 승인/반려/활성화 처리 이력';
 
 
+
+
 -- =============================================================
--- 16. INDEXES
+-- 16. PLAN POLICY
+-- 관리자 요금제 정책. 현재 정책은 신규 PREMIUM 신청부터 적용되며,
+-- 기존 구독은 BUSINESS_SUBSCRIPTION.MONTHLY_FEE 값을 유지한다.
+-- =============================================================
+
+CREATE TABLE PLAN_POLICY (
+    PLAN_TYPE      VARCHAR2(20)   NOT NULL,
+    MONTHLY_FEE    NUMBER         DEFAULT 0 NOT NULL,
+    ACTIVE_YN      CHAR(1)        DEFAULT 'Y' NOT NULL,
+    UPDATED_BY     NUMBER,
+    CREATED_AT     DATE           DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT     DATE           DEFAULT SYSDATE NOT NULL,
+
+    CONSTRAINT PK_PLAN_POLICY PRIMARY KEY (PLAN_TYPE),
+
+    CONSTRAINT FK_PLAN_POLICY_ADMIN
+        FOREIGN KEY (UPDATED_BY)
+        REFERENCES MEMBER (MEMBER_NO),
+
+    CONSTRAINT CK_PLAN_POLICY_TYPE
+        CHECK (PLAN_TYPE IN ('FREE', 'PREMIUM')),
+
+    CONSTRAINT CK_PLAN_POLICY_FEE
+        CHECK (MONTHLY_FEE >= 0),
+
+    CONSTRAINT CK_PLAN_POLICY_ACTIVE
+        CHECK (ACTIVE_YN IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE PLAN_POLICY IS 'FREE/PREMIUM 전역 요금제 정책';
+COMMENT ON COLUMN PLAN_POLICY.MONTHLY_FEE IS '신규 구독 신청에 적용되는 월 이용료';
+COMMENT ON COLUMN PLAN_POLICY.UPDATED_BY IS '마지막 정책 수정 관리자 MEMBER_NO';
+
+-- 기본 요금 정책
+INSERT INTO PLAN_POLICY (
+    PLAN_TYPE, MONTHLY_FEE, ACTIVE_YN, UPDATED_BY, CREATED_AT, UPDATED_AT
+) VALUES (
+    'FREE', 0, 'Y', NULL, SYSDATE, SYSDATE
+);
+
+INSERT INTO PLAN_POLICY (
+    PLAN_TYPE, MONTHLY_FEE, ACTIVE_YN, UPDATED_BY, CREATED_AT, UPDATED_AT
+) VALUES (
+    'PREMIUM', 99000, 'Y', NULL, SYSDATE, SYSDATE
+);
+
+
+-- =============================================================
+-- 17. INDEXES
 -- =============================================================
 
 CREATE INDEX IDX_MEMBER_ROLE_STATUS
@@ -645,7 +697,7 @@ CREATE INDEX IDX_NOTIFICATION_MEMBER_READ
 
 
 -- =============================================================
--- 17. BUSINESS TRIAL STATS VIEW
+-- 18. BUSINESS TRIAL STATS VIEW
 -- 사업자 프리미엄 통계:
 -- 조회수 / 관심등록 / 문의 / 참여
 -- =============================================================
@@ -682,7 +734,7 @@ WHERE T.SOURCE_TYPE = 'BUSINESS';
 
 
 -- =============================================================
--- 18. ACTIVE PREMIUM TRIAL VIEW
+-- 19. ACTIVE PREMIUM TRIAL VIEW
 -- 메인/검색 프리미엄 영역 조회용
 -- =============================================================
 
@@ -707,7 +759,7 @@ WHERE P.STATUS = 'ACTIVE'
 
 
 -- =============================================================
--- 19. ADMIN DASHBOARD VIEW
+-- 20. ADMIN DASHBOARD VIEW
 -- 회원/사업자/임상시험/문의/프리미엄/매출
 -- =============================================================
 
@@ -745,7 +797,7 @@ FROM DUAL;
 
 
 -- =============================================================
--- 20. OPTIONAL SEED EXAMPLES
+-- 21. OPTIONAL SEED EXAMPLES
 -- 실제 프로젝트에서는 비밀번호를 반드시 BCrypt 등으로 암호화한 값을 사용.
 -- 아래 데이터는 예시이므로 기본적으로 주석 처리한다.
 -- =============================================================
@@ -768,7 +820,7 @@ COMMIT;
 
 
 -- =============================================================
--- 21. APPLICATION RULES (DB + SERVICE)
+-- 22. APPLICATION RULES (DB + SERVICE)
 -- =============================================================
 -- 1) BUSINESS.APPROVAL_STATUS = 'APPROVED' 인 사업자만
 --    자체 임상시험 등록/수정/검수 요청 가능.
@@ -797,4 +849,51 @@ COMMIT;
 --
 -- 10) 실제 PG 결제를 구현하지 않는 MVP에서는 PAYMENT_METHOD='TEST'
 --     또는 'MANUAL'로 처리 가능.
+--
+-- 11) PLAN_POLICY.MONTHLY_FEE는 신규 PREMIUM 신청 시점의 기준 금액이며,
+--     신청 당시 금액을 BUSINESS_SUBSCRIPTION.MONTHLY_FEE에 복사해 고정한다.
+--     이후 관리자가 정책 가격을 변경해도 기존 구독 금액은 자동 변경하지 않는다.
+--
+-- 12) PREMIUM 자동결제 운영 중에는 BUSINESS_SUBSCRIPTION.END_DATE=NULL을 유지한다.
+--     사업자가 자동결제 취소를 신청한 경우에만 현재 결제 주기 종료예정일을
+--     END_DATE에 저장하며, 그 날짜까지 PREMIUM 기능을 유지한다.
+--
+-- 13) 취소 철회(자동결제 이어하기) 시 종료예정일 이전이면 END_DATE를 NULL로
+--     되돌려 다음 월 자동결제를 계속한다.
+--
+-- 14) PREMIUM 통계/프리미엄 노출은 STATUS='ACTIVE'이고
+--     END_DATE가 NULL 또는 SYSDATE보다 미래인 구독에만 허용한다.
+--
+-- 15) PREMIUM 정기결제는 현재 프로젝트에서 실제 PG 대신 TEST 결제로 처리하며,
+--     결제 주기 도래 시 PAYMENT에 PAID 이력을 생성한다.
 -- =============================================================
+
+-- =============================================================
+-- 23. FINAL CHECK
+-- 신규 스키마 생성 후 17개 테이블이 생성되었는지 확인한다.
+-- =============================================================
+SELECT COUNT(*) AS MEDITRIALS_TABLE_COUNT
+  FROM USER_TABLES
+ WHERE TABLE_NAME IN (
+    'MEMBER',
+    'BUSINESS',
+    'DISEASE',
+    'CLINICAL_TRIAL',
+    'TRIAL_DISEASE',
+    'FAVORITE_DISEASE',
+    'FAVORITE_TRIAL',
+    'TRIAL_INQUIRY',
+    'TRIAL_PARTICIPATION',
+    'BUSINESS_SUBSCRIPTION',
+    'PAYMENT',
+    'TRIAL_PROMOTION',
+    'TRIAL_VIEW_HISTORY',
+    'NOTIFICATION',
+    'NOTICE',
+    'ADMIN_REVIEW_LOG',
+    'PLAN_POLICY'
+ );
+
+SELECT PLAN_TYPE, MONTHLY_FEE, ACTIVE_YN, UPDATED_BY, UPDATED_AT
+  FROM PLAN_POLICY
+ ORDER BY PLAN_TYPE;
