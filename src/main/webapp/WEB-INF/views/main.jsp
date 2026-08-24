@@ -1,4 +1,27 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
+<%@ page import="meditrials.meditrials.trial.vo.TrialVO" %>
+<%@ page import="org.springframework.web.util.HtmlUtils" %>
+<%!
+    private String h(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
+    }
+
+    private String statusLabel(String value) {
+        if (value == null) return "상태 미확인";
+        return switch (value) {
+            case "RECRUITING" -> "모집중";
+            case "NOT_YET_RECRUITING" -> "모집예정";
+            case "COMPLETED" -> "모집완료";
+            default -> value;
+        };
+    }
+%>
+<%
+    List<TrialVO> premiumTrials = request.getAttribute("premiumTrials") instanceof List<?> list
+            ? (List<TrialVO>) list : List.of();
+    TrialVO premiumTrial = premiumTrials.isEmpty() ? null : premiumTrials.get(0);
+%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -82,9 +105,21 @@
 
     <article class="premium-trial-panel">
       <span class="premium-label">★ 프리미엄 추천 임상시험</span>
-      <h2>차세대 유전자 치료제<br>임상 2/3상 연구</h2>
-      <p>희귀 유전 질환 대상<br>전국 주요 병원 모집 중</p>
-      <a class="premium-detail-button" href="${pageContext.request.contextPath}/trials/1">자세히 보기 →</a>
+      <% if (premiumTrial != null) { %>
+        <h2><%= h(premiumTrial.getTitle()) %></h2>
+        <p>
+          <%= premiumTrial.getConditionsText() == null || premiumTrial.getConditionsText().isBlank()
+                  ? "MediTrials 승인 임상시험" : h(premiumTrial.getConditionsText()) %><br>
+          <%= premiumTrial.getInstitutionName() == null || premiumTrial.getInstitutionName().isBlank()
+                  ? "참여 기관 정보 확인" : h(premiumTrial.getInstitutionName()) %>
+          · <%= h(statusLabel(premiumTrial.getRecruitmentStatus())) %>
+        </p>
+        <a class="premium-detail-button" href="${pageContext.request.contextPath}/trials/<%= premiumTrial.getTrialNo() %>">자세히 보기 →</a>
+      <% } else { %>
+        <h2>프리미엄 추천 임상시험</h2>
+        <p>관리자 승인된 프리미엄 노출 임상시험이 이 영역에 표시됩니다.</p>
+        <a class="premium-detail-button" href="${pageContext.request.contextPath}/trials">임상시험 검색 →</a>
+      <% } %>
     </article>
   </section>
 </main>

@@ -31,4 +31,6 @@ public interface TrialDAO {
             @Param("keyword") String keyword,
             @Param("recruitmentStatus") String recruitmentStatus,
             @Param("limit") int limit);
+
+    List<TrialVO> selectActivePremiumTrialList(@Param("limit") int limit);
 }

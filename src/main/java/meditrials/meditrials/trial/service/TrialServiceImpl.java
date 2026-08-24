@@ -102,6 +102,12 @@ public class TrialServiceImpl implements TrialService {
     }
 
     @Override
+    public List<TrialVO> getActivePremiumTrials(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 10));
+        return trialDAO.selectActivePremiumTrialList(safeLimit);
+    }
+
+    @Override
     @Transactional
     public void recordTrialView(Long trialNo, Long memberNo) {
         if (trialNo == null) {

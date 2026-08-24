@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.member.dao.AdminMemberDAO">
+
+    <resultMap id="adminMemberResultMap" type="meditrials.meditrials.admin.member.vo.AdminMemberVO">
+        <id property="memberNo" column="MEMBER_NO"/>
+        <result property="email" column="EMAIL"/>
+        <result property="memberName" column="MEMBER_NAME"/>
+        <result property="phone" column="PHONE"/>
+        <result property="roleCode" column="ROLE_CODE"/>
+        <result property="status" column="STATUS"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="orgType" column="ORG_TYPE"/>
+        <result property="approvalStatus" column="APPROVAL_STATUS"/>
+    </resultMap>
+
+    <sql id="memberSelectColumns">
+        M.MEMBER_NO,
+        M.EMAIL,
+        M.MEMBER_NAME,
+        M.PHONE,
+        M.ROLE_CODE,
+        M.STATUS,
+        M.CREATED_AT,
+        M.UPDATED_AT,
+        B.BUSINESS_NO,
+        B.ORG_NAME,
+        B.ORG_TYPE,
+        B.APPROVAL_STATUS
+    </sql>
+
+    <select id="selectMembers" resultMap="adminMemberResultMap">
+        SELECT <include refid="memberSelectColumns"/>
+          FROM MEMBER M
+          LEFT JOIN BUSINESS B
+            ON B.MEMBER_NO = M.MEMBER_NO
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    LOWER(M.EMAIL) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR M.MEMBER_NAME LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        </where>
+         ORDER BY M.MEMBER_NO DESC
+    </select>
+
+    <select id="selectMemberByNo" resultMap="adminMemberResultMap">
+        SELECT <include refid="memberSelectColumns"/>
+          FROM MEMBER M
+          LEFT JOIN BUSINESS B
+            ON B.MEMBER_NO = M.MEMBER_NO
+         WHERE M.MEMBER_NO = #{memberNo}
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER
+         WHERE STATUS = #{status}
+    </select>
+
+    <update id="updateMemberStatus">
+        UPDATE MEMBER
+           SET STATUS = #{status},
+               UPDATED_AT = SYSDATE
+         WHERE MEMBER_NO = #{memberNo}
+           AND ROLE_CODE &lt;&gt; 'ADMIN'
+           AND STATUS &lt;&gt; 'WITHDRAWN'
+    </update>
+
+</mapper>

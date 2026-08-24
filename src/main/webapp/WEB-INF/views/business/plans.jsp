@@ -138,6 +138,16 @@
       </div>
     </div>
 
+    <% if (premiumActive) { %>
+      <section class="card mt-20" style="display:flex;align-items:center;justify-content:space-between;gap:20px;">
+        <div>
+          <h3 style="margin:0 0 6px;">프리미엄 임상시험 노출</h3>
+          <p class="text-muted" style="margin:0;">승인 완료된 자체 임상시험을 메인 추천 영역과 검색 상단에 노출 신청할 수 있습니다.</p>
+        </div>
+        <a class="btn btn-primary" href="${pageContext.request.contextPath}/business/promotions">노출 신청/관리</a>
+      </section>
+    <% } %>
+
     <section class="card mt-20">
       <div class="row-between" style="align-items:flex-start;">
         <div>

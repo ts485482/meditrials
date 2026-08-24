@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.promotion.dao.AdminPromotionDAO">
+
+    <resultMap id="adminPromotionResultMap" type="meditrials.meditrials.admin.promotion.vo.AdminPromotionVO">
+        <id property="promotionNo" column="PROMOTION_NO"/>
+        <result property="trialNo" column="TRIAL_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="subscriptionNo" column="SUBSCRIPTION_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="title" column="TITLE"/>
+        <result property="phase" column="PHASE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="promotionStatus" column="PROMOTION_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="subscriptionStatus" column="SUBSCRIPTION_STATUS"/>
+        <result property="startDate" column="START_DATE"/>
+        <result property="endDate" column="END_DATE"/>
+        <result property="subscriptionEndDate" column="SUBSCRIPTION_END_DATE"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="adminPromotionColumns">
+        P.PROMOTION_NO,
+        P.TRIAL_NO,
+        P.BUSINESS_NO,
+        P.SUBSCRIPTION_NO,
+        B.ORG_NAME,
+        T.TITLE,
+        T.PHASE,
+        T.RECRUITMENT_STATUS,
+        T.INSTITUTION_NAME,
+        P.STATUS AS PROMOTION_STATUS,
+        P.REJECT_REASON,
+        P.START_DATE,
+        P.END_DATE,
+        P.CREATED_AT,
+        P.UPDATED_AT,
+        S.STATUS AS SUBSCRIPTION_STATUS,
+        S.END_DATE AS SUBSCRIPTION_END_DATE
+    </sql>
+
+    <select id="selectPromotionList" resultMap="adminPromotionResultMap">
+        SELECT <include refid="adminPromotionColumns"/>
+          FROM TRIAL_PROMOTION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+          LEFT JOIN BUSINESS_SUBSCRIPTION S
+            ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+         ORDER BY
+               CASE P.STATUS
+                   WHEN 'PENDING' THEN 1
+                   WHEN 'ACTIVE' THEN 2
+                   WHEN 'REJECTED' THEN 3
+                   ELSE 4
+               END,
+               P.CREATED_AT DESC,
+               P.PROMOTION_NO DESC
+    </select>
+
+    <select id="selectPromotionByNo" resultMap="adminPromotionResultMap">
+        SELECT <include refid="adminPromotionColumns"/>
+          FROM TRIAL_PROMOTION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+          LEFT JOIN BUSINESS_SUBSCRIPTION S
+            ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+         WHERE P.PROMOTION_NO = #{promotionNo}
+    </select>
+
+    <update id="approvePromotion">
+        UPDATE TRIAL_PROMOTION
+           SET STATUS = 'ACTIVE',
+               START_DATE = SYSDATE,
+               END_DATE = NULL,
+               REJECT_REASON = NULL,
+               UPDATED_AT = SYSDATE
+         WHERE PROMOTION_NO = #{promotionNo}
+           AND STATUS = 'PENDING'
+           AND EXISTS (
+               SELECT 1
+                 FROM CLINICAL_TRIAL T
+                 JOIN BUSINESS B
+                   ON B.BUSINESS_NO = T.BUSINESS_NO
+                WHERE T.TRIAL_NO = TRIAL_PROMOTION.TRIAL_NO
+                  AND T.BUSINESS_NO = TRIAL_PROMOTION.BUSINESS_NO
+                  AND T.SOURCE_TYPE = 'BUSINESS'
+                  AND T.REVIEW_STATUS = 'APPROVED'
+                  AND B.APPROVAL_STATUS = 'APPROVED'
+           )
+           AND EXISTS (
+               SELECT 1
+                 FROM BUSINESS_SUBSCRIPTION S
+                WHERE S.SUBSCRIPTION_NO = TRIAL_PROMOTION.SUBSCRIPTION_NO
+                  AND S.BUSINESS_NO = TRIAL_PROMOTION.BUSINESS_NO
+                  AND S.PLAN_TYPE = 'PREMIUM'
+                  AND S.STATUS = 'ACTIVE'
+                  AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+           )
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM TRIAL_PROMOTION P2
+                WHERE P2.TRIAL_NO = TRIAL_PROMOTION.TRIAL_NO
+                  AND P2.STATUS = 'ACTIVE'
+                  AND P2.PROMOTION_NO &lt;&gt; TRIAL_PROMOTION.PROMOTION_NO
+           )
+    </update>
+
+    <update id="rejectPromotion">
+        UPDATE TRIAL_PROMOTION
+           SET STATUS = 'REJECTED',
+               REJECT_REASON = #{rejectReason,jdbcType=VARCHAR},
+               UPDATED_AT = SYSDATE
+         WHERE PROMOTION_NO = #{promotionNo}
+           AND STATUS = 'PENDING'
+    </update>
+
+    <insert id="insertReviewLog">
+        INSERT INTO ADMIN_REVIEW_LOG (
+            REVIEW_LOG_NO,
+            ADMIN_MEMBER_NO,
+            TARGET_TYPE,
+            TARGET_NO,
+            ACTION_TYPE,
+            REASON,
+            CREATED_AT
+        ) VALUES (
+            SEQ_ADMIN_REVIEW_LOG.NEXTVAL,
+            #{adminMemberNo},
+            'PROMOTION',
+            #{promotionNo},
+            #{actionType},
+            #{reason,jdbcType=VARCHAR},
+            SYSDATE
+        )
+    </insert>
+
+    <update id="endInactivePromotions">
+        UPDATE TRIAL_PROMOTION
+           SET STATUS = 'ENDED',
+               END_DATE = CASE
+                   WHEN STATUS = 'ACTIVE' THEN NVL(END_DATE, SYSDATE)
+                   ELSE END_DATE
+               END,
+               UPDATED_AT = SYSDATE
+         WHERE STATUS IN ('PENDING', 'ACTIVE')
+           AND (
+               NOT EXISTS (
+                   SELECT 1
+                     FROM BUSINESS_SUBSCRIPTION S
+                    WHERE S.SUBSCRIPTION_NO = TRIAL_PROMOTION.SUBSCRIPTION_NO
+                      AND S.BUSINESS_NO = TRIAL_PROMOTION.BUSINESS_NO
+                      AND S.PLAN_TYPE = 'PREMIUM'
+                      AND S.STATUS = 'ACTIVE'
+                      AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+               )
+               OR NOT EXISTS (
+                   SELECT 1
+                     FROM CLINICAL_TRIAL T
+                     JOIN BUSINESS B
+                       ON B.BUSINESS_NO = T.BUSINESS_NO
+                    WHERE T.TRIAL_NO = TRIAL_PROMOTION.TRIAL_NO
+                      AND T.BUSINESS_NO = TRIAL_PROMOTION.BUSINESS_NO
+                      AND T.SOURCE_TYPE = 'BUSINESS'
+                      AND T.REVIEW_STATUS = 'APPROVED'
+                      AND B.APPROVAL_STATUS = 'APPROVED'
+               )
+           )
+    </update>
+
+</mapper>

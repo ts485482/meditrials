@@ -37,6 +37,7 @@ public class TrialVO {
     // API 화면 표시용 비영속 필드
     private String conditionsText;
     private Integer locationCount;
+    private boolean premiumPromoted;
 
     public Long getTrialNo() {
         return trialNo;
@@ -285,4 +286,13 @@ public class TrialVO {
     public void setLocationCount(Integer locationCount) {
         this.locationCount = locationCount;
     }
+
+    public boolean isPremiumPromoted() {
+        return premiumPromoted;
+    }
+
+    public void setPremiumPromoted(boolean premiumPromoted) {
+        this.premiumPromoted = premiumPromoted;
+    }
 }
+

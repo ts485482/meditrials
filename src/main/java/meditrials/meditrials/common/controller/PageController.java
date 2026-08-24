@@ -5,8 +5,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import meditrials.meditrials.trial.service.TrialService;
+
 @Controller
 public class PageController {
+
+    private final TrialService trialService;
+
+    public PageController(TrialService trialService) {
+        this.trialService = trialService;
+    }
 
     @GetMapping("/")
     public String root() {
@@ -14,7 +22,8 @@ public class PageController {
     }
 
     @GetMapping("/main")
-    public String main() {
+    public String main(Model model) {
+        model.addAttribute("premiumTrials", trialService.getActivePremiumTrials(3));
         return "main";
     }
 
@@ -52,10 +61,6 @@ public class PageController {
     }
 
 
-    @GetMapping("/admin/members")
-    public String adminMembers() {
-        return "admin/members";
-    }
 
     @GetMapping("/admin/plans")
     public String adminPlans() {
@@ -63,10 +68,6 @@ public class PageController {
     }
 
 
-    @GetMapping("/admin/promotions")
-    public String adminPromotions() {
-        return "admin/promotions";
-    }
 
     @GetMapping("/admin/revenue")
     public String adminRevenue() {

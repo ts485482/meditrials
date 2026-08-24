@@ -189,7 +189,12 @@
                   <div class="trial-card-english-title"><%= h(trial.getOfficialTitle()) %></div>
                 <% } %>
               </div>
-              <span class="badge <%= statusClass(trial.getRecruitmentStatus()) %>"><%= h(statusLabel(trial.getRecruitmentStatus())) %></span>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                <% if (trial.isPremiumPromoted()) { %>
+                  <span class="badge badge-amber">★ PREMIUM</span>
+                <% } %>
+                <span class="badge <%= statusClass(trial.getRecruitmentStatus()) %>"><%= h(statusLabel(trial.getRecruitmentStatus())) %></span>
+              </div>
             </div>
             <div class="result-meta trial-card-meta">
               <span class="badge badge-blue"><%= h(phaseLabel(trial.getPhase())) %></span>

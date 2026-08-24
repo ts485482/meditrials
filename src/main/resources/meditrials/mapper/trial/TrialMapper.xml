@@ -38,6 +38,7 @@
 
     <resultMap id="trialWithConditionResultMap" type="meditrials.meditrials.trial.vo.TrialVO" extends="trialResultMap">
         <result property="conditionsText" column="CONDITIONS_TEXT"/>
+        <result property="premiumPromoted" column="PREMIUM_PROMOTED"/>
     </resultMap>
 
     <sql id="trialColumns">
@@ -265,25 +266,117 @@
                     T.VIEW_COUNT,
                     T.CREATED_AT,
                     T.UPDATED_AT,
-                    D.DISEASE_NAME AS CONDITIONS_TEXT
+                    (
+                        SELECT MIN(D.DISEASE_NAME)
+                          FROM TRIAL_DISEASE TD
+                          JOIN DISEASE D
+                            ON D.DISEASE_NO = TD.DISEASE_NO
+                         WHERE TD.TRIAL_NO = T.TRIAL_NO
+                    ) AS CONDITIONS_TEXT,
+                    NVL(PR.PREMIUM_PROMOTED, 0) AS PREMIUM_PROMOTED
                   FROM CLINICAL_TRIAL T
-                  LEFT JOIN TRIAL_DISEASE TD
-                    ON TD.TRIAL_NO = T.TRIAL_NO
-                  LEFT JOIN DISEASE D
-                    ON D.DISEASE_NO = TD.DISEASE_NO
+                  LEFT JOIN (
+                        SELECT P.TRIAL_NO, P.BUSINESS_NO, 1 AS PREMIUM_PROMOTED
+                          FROM TRIAL_PROMOTION P
+                          JOIN BUSINESS_SUBSCRIPTION S
+                            ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+                           AND S.BUSINESS_NO = P.BUSINESS_NO
+                         WHERE P.STATUS = 'ACTIVE'
+                           AND (P.START_DATE IS NULL OR P.START_DATE &lt;= SYSDATE)
+                           AND (P.END_DATE IS NULL OR P.END_DATE &gt;= SYSDATE)
+                           AND S.PLAN_TYPE = 'PREMIUM'
+                           AND S.STATUS = 'ACTIVE'
+                           AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+                         GROUP BY P.TRIAL_NO, P.BUSINESS_NO
+                  ) PR
+                    ON PR.TRIAL_NO = T.TRIAL_NO
+                   AND PR.BUSINESS_NO = T.BUSINESS_NO
                  WHERE T.SOURCE_TYPE = 'BUSINESS'
                    AND T.REVIEW_STATUS = 'APPROVED'
                    <if test="keyword != null and keyword != ''">
                      AND (
                          LOWER(T.TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
                          OR LOWER(T.OFFICIAL_TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
-                         OR LOWER(D.DISEASE_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR EXISTS (
+                             SELECT 1
+                               FROM TRIAL_DISEASE TD2
+                               JOIN DISEASE D2
+                                 ON D2.DISEASE_NO = TD2.DISEASE_NO
+                              WHERE TD2.TRIAL_NO = T.TRIAL_NO
+                                AND LOWER(D2.DISEASE_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                         )
                      )
                    </if>
                    <if test="recruitmentStatus != null and recruitmentStatus != ''">
                      AND T.RECRUITMENT_STATUS = #{recruitmentStatus}
                    </if>
-                 ORDER BY NVL(T.UPDATED_AT, T.CREATED_AT) DESC, T.TRIAL_NO DESC
+                 ORDER BY NVL(PR.PREMIUM_PROMOTED, 0) DESC,
+                          NVL(T.UPDATED_AT, T.CREATED_AT) DESC,
+                          T.TRIAL_NO DESC
+               )
+         WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <select id="selectActivePremiumTrialList" resultMap="trialWithConditionResultMap">
+        SELECT *
+          FROM (
+                SELECT
+                    T.TRIAL_NO,
+                    T.NCT_ID,
+                    T.BUSINESS_NO,
+                    T.SOURCE_TYPE,
+                    T.TITLE,
+                    T.OFFICIAL_TITLE,
+                    T.BRIEF_SUMMARY,
+                    T.PHASE,
+                    T.STUDY_TYPE,
+                    T.RECRUITMENT_STATUS,
+                    T.ELIGIBILITY_TEXT,
+                    T.SEX,
+                    T.MIN_AGE,
+                    T.MAX_AGE,
+                    T.ENROLLMENT_TARGET,
+                    T.ENROLLMENT_CURRENT,
+                    T.LEAD_SPONSOR,
+                    T.INSTITUTION_NAME,
+                    T.LOCATION_TEXT,
+                    T.CONTACT_NAME,
+                    T.CONTACT_PHONE,
+                    T.CONTACT_EMAIL,
+                    T.START_DATE_TEXT,
+                    T.COMPLETION_DATE_TEXT,
+                    T.REVIEW_STATUS,
+                    T.REJECT_REASON,
+                    T.VIEW_COUNT,
+                    T.CREATED_AT,
+                    T.UPDATED_AT,
+                    (
+                        SELECT MIN(D.DISEASE_NAME)
+                          FROM TRIAL_DISEASE TD
+                          JOIN DISEASE D
+                            ON D.DISEASE_NO = TD.DISEASE_NO
+                         WHERE TD.TRIAL_NO = T.TRIAL_NO
+                    ) AS CONDITIONS_TEXT,
+                    1 AS PREMIUM_PROMOTED
+                  FROM TRIAL_PROMOTION P
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = P.TRIAL_NO
+                   AND T.BUSINESS_NO = P.BUSINESS_NO
+                  JOIN BUSINESS B
+                    ON B.BUSINESS_NO = P.BUSINESS_NO
+                  JOIN BUSINESS_SUBSCRIPTION S
+                    ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+                   AND S.BUSINESS_NO = P.BUSINESS_NO
+                 WHERE P.STATUS = 'ACTIVE'
+                   AND (P.START_DATE IS NULL OR P.START_DATE &lt;= SYSDATE)
+                   AND (P.END_DATE IS NULL OR P.END_DATE &gt;= SYSDATE)
+                   AND B.APPROVAL_STATUS = 'APPROVED'
+                   AND T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   AND S.PLAN_TYPE = 'PREMIUM'
+                   AND S.STATUS = 'ACTIVE'
+                   AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+                 ORDER BY NVL(P.START_DATE, P.CREATED_AT) DESC, P.PROMOTION_NO DESC
                )
          WHERE ROWNUM &lt;= #{limit}
     </select>
