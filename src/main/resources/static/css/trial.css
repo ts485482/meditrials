@@ -51,3 +51,7 @@
 .trial-result-card-cris:hover{border-color:#9fd3c0;box-shadow:0 8px 24px rgba(25,128,95,.08)}
 .trial-card-english-title{margin:-4px 0 10px;color:#7a8798;font-size:12px;line-height:1.45}
 @media(max-width:900px){.trial-source-badges{justify-content:flex-start}.trial-title-row{gap:12px}}
+
+/* MediTrials 사업자 직접 등록 + 관리자 승인 시험 */
+.trial-result-card-business{border-color:#cbdcf5;background:#fbfdff}
+.trial-result-card-business:hover{border-color:#8bb6eb;box-shadow:0 8px 24px rgba(23,105,210,.09)}

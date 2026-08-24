@@ -36,6 +36,10 @@
         <result property="updatedAt" column="UPDATED_AT"/>
     </resultMap>
 
+    <resultMap id="trialWithConditionResultMap" type="meditrials.meditrials.trial.vo.TrialVO" extends="trialResultMap">
+        <result property="conditionsText" column="CONDITIONS_TEXT"/>
+    </resultMap>
+
     <sql id="trialColumns">
         TRIAL_NO,
         NCT_ID,
@@ -223,6 +227,62 @@
                      AND RECRUITMENT_STATUS = #{recruitmentStatus}
                    </if>
                  ORDER BY NVL(UPDATED_AT, CREATED_AT) DESC
+               )
+         WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <select id="selectApprovedBusinessTrialList" resultMap="trialWithConditionResultMap">
+        SELECT *
+          FROM (
+                SELECT
+                    T.TRIAL_NO,
+                    T.NCT_ID,
+                    T.BUSINESS_NO,
+                    T.SOURCE_TYPE,
+                    T.TITLE,
+                    T.OFFICIAL_TITLE,
+                    T.BRIEF_SUMMARY,
+                    T.PHASE,
+                    T.STUDY_TYPE,
+                    T.RECRUITMENT_STATUS,
+                    T.ELIGIBILITY_TEXT,
+                    T.SEX,
+                    T.MIN_AGE,
+                    T.MAX_AGE,
+                    T.ENROLLMENT_TARGET,
+                    T.ENROLLMENT_CURRENT,
+                    T.LEAD_SPONSOR,
+                    T.INSTITUTION_NAME,
+                    T.LOCATION_TEXT,
+                    T.CONTACT_NAME,
+                    T.CONTACT_PHONE,
+                    T.CONTACT_EMAIL,
+                    T.START_DATE_TEXT,
+                    T.COMPLETION_DATE_TEXT,
+                    T.REVIEW_STATUS,
+                    T.REJECT_REASON,
+                    T.VIEW_COUNT,
+                    T.CREATED_AT,
+                    T.UPDATED_AT,
+                    D.DISEASE_NAME AS CONDITIONS_TEXT
+                  FROM CLINICAL_TRIAL T
+                  LEFT JOIN TRIAL_DISEASE TD
+                    ON TD.TRIAL_NO = T.TRIAL_NO
+                  LEFT JOIN DISEASE D
+                    ON D.DISEASE_NO = TD.DISEASE_NO
+                 WHERE T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   <if test="keyword != null and keyword != ''">
+                     AND (
+                         LOWER(T.TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(T.OFFICIAL_TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(D.DISEASE_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+                     )
+                   </if>
+                   <if test="recruitmentStatus != null and recruitmentStatus != ''">
+                     AND T.RECRUITMENT_STATUS = #{recruitmentStatus}
+                   </if>
+                 ORDER BY NVL(T.UPDATED_AT, T.CREATED_AT) DESC, T.TRIAL_NO DESC
                )
          WHERE ROWNUM &lt;= #{limit}
     </select>

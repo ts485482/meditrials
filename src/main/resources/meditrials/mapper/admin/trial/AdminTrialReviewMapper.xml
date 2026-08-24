@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.trial.dao.AdminTrialReviewDAO">
+
+    <resultMap id="adminTrialReviewResultMap" type="meditrials.meditrials.admin.trial.vo.AdminTrialReviewVO">
+        <id property="trialNo" column="TRIAL_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="orgName" column="ORG_NAME"/>
+        <result property="diseaseNo" column="DISEASE_NO"/>
+        <result property="diseaseName" column="DISEASE_NAME"/>
+        <result property="title" column="TITLE"/>
+        <result property="phase" column="PHASE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="briefSummary" column="BRIEF_SUMMARY"/>
+        <result property="eligibilityText" column="ELIGIBILITY_TEXT"/>
+        <result property="enrollmentTarget" column="ENROLLMENT_TARGET"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="locationText" column="LOCATION_TEXT"/>
+        <result property="contactName" column="CONTACT_NAME"/>
+        <result property="contactPhone" column="CONTACT_PHONE"/>
+        <result property="contactEmail" column="CONTACT_EMAIL"/>
+        <result property="startDateText" column="START_DATE_TEXT"/>
+        <result property="completionDateText" column="COMPLETION_DATE_TEXT"/>
+        <result property="reviewStatus" column="REVIEW_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="reviewTrialColumns">
+        T.TRIAL_NO,
+        T.BUSINESS_NO,
+        B.ORG_NAME,
+        TD.DISEASE_NO,
+        D.DISEASE_NAME,
+        T.TITLE,
+        T.PHASE,
+        T.RECRUITMENT_STATUS,
+        T.BRIEF_SUMMARY,
+        T.ELIGIBILITY_TEXT,
+        T.ENROLLMENT_TARGET,
+        T.INSTITUTION_NAME,
+        T.LOCATION_TEXT,
+        T.CONTACT_NAME,
+        T.CONTACT_PHONE,
+        T.CONTACT_EMAIL,
+        T.START_DATE_TEXT,
+        T.COMPLETION_DATE_TEXT,
+        T.REVIEW_STATUS,
+        T.REJECT_REASON,
+        T.CREATED_AT,
+        T.UPDATED_AT
+    </sql>
+
+    <select id="selectReviewTrialList" resultMap="adminTrialReviewResultMap">
+        SELECT <include refid="reviewTrialColumns"/>
+          FROM CLINICAL_TRIAL T
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = T.BUSINESS_NO
+          LEFT JOIN TRIAL_DISEASE TD
+            ON TD.TRIAL_NO = T.TRIAL_NO
+          LEFT JOIN DISEASE D
+            ON D.DISEASE_NO = TD.DISEASE_NO
+         WHERE T.SOURCE_TYPE = 'BUSINESS'
+           AND T.REVIEW_STATUS IN ('PENDING', 'APPROVED', 'REJECTED')
+         ORDER BY
+               CASE T.REVIEW_STATUS
+                   WHEN 'PENDING' THEN 1
+                   WHEN 'REJECTED' THEN 2
+                   ELSE 3
+               END,
+               NVL(T.UPDATED_AT, T.CREATED_AT) DESC,
+               T.TRIAL_NO DESC
+    </select>
+
+    <select id="selectReviewTrialByNo" resultMap="adminTrialReviewResultMap">
+        SELECT <include refid="reviewTrialColumns"/>
+          FROM CLINICAL_TRIAL T
+          JOIN BUSINESS B
+            ON B.BUSINESS_NO = T.BUSINESS_NO
+          LEFT JOIN TRIAL_DISEASE TD
+            ON TD.TRIAL_NO = T.TRIAL_NO
+          LEFT JOIN DISEASE D
+            ON D.DISEASE_NO = TD.DISEASE_NO
+         WHERE T.TRIAL_NO = #{trialNo}
+           AND T.SOURCE_TYPE = 'BUSINESS'
+           AND T.REVIEW_STATUS IN ('PENDING', 'APPROVED', 'REJECTED')
+    </select>
+
+    <update id="approveTrial">
+        UPDATE CLINICAL_TRIAL
+           SET REVIEW_STATUS = 'APPROVED',
+               REJECT_REASON = NULL,
+               UPDATED_AT = SYSDATE
+         WHERE TRIAL_NO = #{trialNo}
+           AND SOURCE_TYPE = 'BUSINESS'
+           AND REVIEW_STATUS = 'PENDING'
+    </update>
+
+    <update id="rejectTrial">
+        UPDATE CLINICAL_TRIAL
+           SET REVIEW_STATUS = 'REJECTED',
+               REJECT_REASON = #{rejectReason,jdbcType=VARCHAR},
+               UPDATED_AT = SYSDATE
+         WHERE TRIAL_NO = #{trialNo}
+           AND SOURCE_TYPE = 'BUSINESS'
+           AND REVIEW_STATUS = 'PENDING'
+    </update>
+
+    <insert id="insertReviewLog">
+        INSERT INTO ADMIN_REVIEW_LOG (
+            REVIEW_LOG_NO,
+            ADMIN_MEMBER_NO,
+            TARGET_TYPE,
+            TARGET_NO,
+            ACTION_TYPE,
+            REASON,
+            CREATED_AT
+        ) VALUES (
+            SEQ_ADMIN_REVIEW_LOG.NEXTVAL,
+            #{adminMemberNo},
+            'TRIAL',
+            #{trialNo},
+            #{actionType},
+            #{reason,jdbcType=VARCHAR},
+            SYSDATE
+        )
+    </insert>
+
+</mapper>

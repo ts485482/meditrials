@@ -70,10 +70,6 @@ public class PageController {
         return "admin/businesses";
     }
 
-    @GetMapping("/admin/trials")
-    public String adminTrials() {
-        return "admin/trials";
-    }
 
     @GetMapping("/admin/members")
     public String adminMembers() {

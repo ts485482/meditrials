@@ -50,6 +50,10 @@
         return value;
     }
 
+    private boolean isBusinessTrial(TrialVO trial) {
+        return trial != null && "BUSINESS".equalsIgnoreCase(trial.getSourceType());
+    }
+
     private String sexLabel(String value) {
         if ("ALL".equals(value)) return "모든 성별";
         if ("MALE".equals(value)) return "남성";
@@ -60,9 +64,14 @@
 <%
     TrialVO trial = request.getAttribute("trial") instanceof TrialVO value ? value : null;
     String title = trial == null ? "임상시험 상세" : h(trial.getTitle());
-    String externalId = trial == null ? "" : h(trial.getNctId());
+    boolean businessTrial = isBusinessTrial(trial);
+    String externalId = businessTrial
+            ? (trial == null || trial.getTrialNo() == null ? "MediTrials" : "MT-" + trial.getTrialNo())
+            : (trial == null ? "" : h(trial.getNctId()));
     boolean cris = isCris(trial);
-    String sourceName = cris ? "질병관리청 CRIS" : "ClinicalTrials.gov";
+    String sourceName = businessTrial
+            ? "MediTrials 사업자 등록"
+            : (cris ? "질병관리청 CRIS" : "ClinicalTrials.gov");
     boolean favoriteTrial = Boolean.TRUE.equals(request.getAttribute("favoriteTrial"));
     Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
     boolean loginUser = "USER".equals(loginRoleValue);
@@ -93,7 +102,9 @@
       <div class="trial-detail-tags">
         <span class="badge <%= statusClass(trial == null ? null : trial.getRecruitmentStatus()) %>"><%= h(statusLabel(trial == null ? null : trial.getRecruitmentStatus())) %></span>
         <span class="badge badge-blue"><%= h(phaseLabel(trial == null ? null : trial.getPhase())) %></span>
-        <% if (cris) { %>
+        <% if (businessTrial) { %>
+          <span class="badge badge-green">관리자 승인</span>
+        <% } else if (cris) { %>
           <span class="badge badge-cris">국내 연구</span>
         <% } else if (trial != null && trial.getStudyType() != null) { %>
           <span class="badge badge-gray"><%= h(trial.getStudyType()) %></span>
@@ -131,7 +142,7 @@
           <h2>기관 및 일정</h2>
           <div class="trial-info-grid">
             <div><span>대표 기관</span><strong><%= trial == null || trial.getInstitutionName() == null ? "정보 없음" : h(trial.getInstitutionName()) %></strong></div>
-            <div><span><%= cris ? "연구비지원/책임 기관" : "연구 책임 기관/스폰서" %></span><strong><%= trial == null || trial.getLeadSponsor() == null ? "정보 없음" : h(trial.getLeadSponsor()) %></strong></div>
+            <div><span><%= businessTrial ? "등록 기관" : (cris ? "연구비지원/책임 기관" : "연구 책임 기관/스폰서") %></span><strong><%= trial == null || trial.getLeadSponsor() == null ? "정보 없음" : h(trial.getLeadSponsor()) %></strong></div>
             <div><span><%= cris ? "첫 연구대상자 등록일" : "연구 시작" %></span><strong><%= trial == null || trial.getStartDateText() == null ? "정보 없음" : h(trial.getStartDateText()) %></strong></div>
             <div><span>연구 종료일</span><strong><%= trial == null || trial.getCompletionDateText() == null ? "정보 없음" : h(trial.getCompletionDateText()) %></strong></div>
           </div>
@@ -144,7 +155,12 @@
       <aside class="side-box trial-contact-box">
         <h3>정보 출처 / 참여 확인</h3>
 
-        <% if (cris) { %>
+        <% if (businessTrial) { %>
+          <p><strong>등록 구분</strong><br>MediTrials 사업자 직접 등록 · 관리자 검수 승인</p>
+          <p><strong>연락 담당자</strong><br><%= trial == null || trial.getContactName() == null ? "공개 연락처 없음" : h(trial.getContactName()) %></p>
+          <p><strong>연락처</strong><br><%= trial == null || trial.getContactPhone() == null ? "정보 없음" : h(trial.getContactPhone()) %></p>
+          <p><strong>이메일</strong><br><%= trial == null || trial.getContactEmail() == null ? "정보 없음" : h(trial.getContactEmail()) %></p>
+        <% } else if (cris) { %>
           <p><strong>등록기관</strong><br>질병관리청 임상연구정보서비스(CRIS)</p>
           <p><strong>CRIS 등록번호</strong><br><%= externalId %></p>
           <a class="btn btn-light w-100" href="https://cris.nih.go.kr" target="_blank" rel="noopener noreferrer">CRIS에서 등록번호 검색</a>
@@ -171,9 +187,11 @@
         <a class="btn btn-primary w-100 mt-20" href="${pageContext.request.contextPath}/trials/<%= trial == null ? "" : trial.getTrialNo() %>/inquiries/new">참여 문의</a>
 
         <p class="trial-source-note">
-          <%= cris
-                  ? "CRIS에 공개된 국내 임상연구 등록정보를 기반으로 표시합니다. 모집 가능 여부와 세부 참여조건은 CRIS 및 실제 연구기관에서 다시 확인해야 합니다."
-                  : "ClinicalTrials.gov 등록 정보를 기반으로 표시합니다. 실제 참여 가능 여부와 최신 일정은 연구기관 및 원문에서 다시 확인해야 합니다." %>
+          <%= businessTrial
+                  ? "MediTrials 사업자가 직접 등록하고 관리자가 검수 승인한 임상시험입니다. 실제 참여 가능 여부와 최신 일정은 등록 기관에 확인해주세요."
+                  : (cris
+                      ? "CRIS에 공개된 국내 임상연구 등록정보를 기반으로 표시합니다. 모집 가능 여부와 세부 참여조건은 CRIS 및 실제 연구기관에서 다시 확인해야 합니다."
+                      : "ClinicalTrials.gov 등록 정보를 기반으로 표시합니다. 실제 참여 가능 여부와 최신 일정은 연구기관 및 원문에서 다시 확인해야 합니다.") %>
         </p>
       </aside>
     </div>

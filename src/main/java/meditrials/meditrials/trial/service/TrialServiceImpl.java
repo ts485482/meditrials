@@ -141,6 +141,12 @@ public class TrialServiceImpl implements TrialService {
             displayed = cachedFallback(keyword, recruitmentStatus, phase, true);
         }
 
+        displayed = includeApprovedBusinessTrials(
+                keyword,
+                recruitmentStatus,
+                phase,
+                displayed);
+
         result.setTrials(displayed);
         result.setDisplayedCount(displayed.size());
         result.setApiAvailable(crisError == null || clinicalError == null);
@@ -163,6 +169,11 @@ public class TrialServiceImpl implements TrialService {
                     recruitmentStatus,
                     phase);
             List<TrialVO> displayed = persistAndLimit(filtered);
+            displayed = includeApprovedBusinessTrials(
+                    keyword,
+                    recruitmentStatus,
+                    phase,
+                    displayed);
 
             result.setTrials(displayed);
             result.setDisplayedCount(displayed.size());
@@ -170,11 +181,16 @@ public class TrialServiceImpl implements TrialService {
             result.setClinicalTrialsTotalCount(apiResult.totalCount());
             result.setApiAvailable(true);
             result.setNotice(
-                    "ClinicalTrials.gov API v2의 전 세계 등록 연구를 조회합니다. "
-                    + "검색 결과 중 중재연구(INTERVENTIONAL)를 중심으로 최대 20건을 표시합니다.");
+                    "관리자 승인된 MediTrials 사업자 임상시험과 ClinicalTrials.gov API v2의 전 세계 등록 연구를 함께 조회합니다. "
+                    + "최대 20건을 표시합니다.");
             return result;
         } catch (ClinicalTrialsGovException exception) {
             List<TrialVO> cached = cachedFallback(keyword, recruitmentStatus, phase, false);
+            cached = includeApprovedBusinessTrials(
+                    keyword,
+                    recruitmentStatus,
+                    phase,
+                    cached);
             result.setTrials(cached);
             result.setDisplayedCount(cached.size());
             result.setApiAvailable(false);
@@ -187,8 +203,8 @@ public class TrialServiceImpl implements TrialService {
 
     private String buildDomesticNotice(String crisError, String clinicalError) {
         if (crisError == null && clinicalError == null) {
-            return "국내 임상시험은 질병관리청 CRIS의 한글 중재연구 중 의약품·의료기기·치료 관련 연구를 우선 표시하고, "
-                    + "ClinicalTrials.gov의 대한민국 수행 연구를 함께 보강합니다. 교육·만족도 등 일반 중재연구는 뒤로 배치합니다.";
+            return "관리자 승인된 MediTrials 사업자 임상시험을 함께 표시하고, 질병관리청 CRIS의 한글 치료·중재연구와 "
+                    + "ClinicalTrials.gov의 대한민국 수행 연구를 보강합니다.";
         }
         if (crisError != null && clinicalError == null) {
             return crisError + " 대신 ClinicalTrials.gov에서 대한민국 수행 연구를 표시합니다.";
@@ -197,6 +213,32 @@ public class TrialServiceImpl implements TrialService {
             return clinicalError + " CRIS 국내 한글 등록 연구는 정상적으로 표시합니다.";
         }
         return "CRIS와 ClinicalTrials.gov 호출이 모두 원활하지 않아 저장된 임상시험 데이터가 있으면 대신 표시합니다.";
+    }
+
+    private List<TrialVO> includeApprovedBusinessTrials(
+            String keyword,
+            String recruitmentStatus,
+            String phase,
+            List<TrialVO> externalTrials) {
+        List<TrialVO> businessTrials = trialDAO.selectApprovedBusinessTrialList(
+                keyword,
+                "ALL".equals(recruitmentStatus) ? "" : recruitmentStatus,
+                DISPLAY_LIMIT * 4);
+        List<TrialVO> filteredBusinessTrials = filterTrials(
+                businessTrials,
+                recruitmentStatus,
+                phase);
+
+        List<TrialVO> combined = new ArrayList<>();
+        combined.addAll(filteredBusinessTrials);
+        if (externalTrials != null) {
+            combined.addAll(externalTrials);
+        }
+
+        if (combined.size() > DISPLAY_LIMIT) {
+            return new ArrayList<>(combined.subList(0, DISPLAY_LIMIT));
+        }
+        return combined;
     }
 
     private List<TrialVO> cachedFallback(

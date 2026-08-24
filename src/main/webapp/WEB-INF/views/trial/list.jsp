@@ -13,8 +13,18 @@
                 && trial.getNctId().toUpperCase().startsWith("KCT");
     }
 
+    private boolean isBusinessTrial(TrialVO trial) {
+        return trial != null && "BUSINESS".equalsIgnoreCase(trial.getSourceType());
+    }
+
     private String sourceLabel(TrialVO trial) {
+        if (isBusinessTrial(trial)) return "MediTrials 사업자 등록";
         return isCris(trial) ? "CRIS" : "ClinicalTrials.gov";
+    }
+
+    private String sourceId(TrialVO trial) {
+        if (isBusinessTrial(trial)) return trial.getTrialNo() == null ? "MediTrials" : "MT-" + trial.getTrialNo();
+        return trial == null || trial.getNctId() == null ? "" : trial.getNctId();
     }
 
     private String statusLabel(String value) {
@@ -170,10 +180,10 @@
     <% } else { %>
       <div class="trial-result-list">
         <% for (TrialVO trial : trials) { %>
-          <a class="result-card trial-result-card <%= isCris(trial) ? "trial-result-card-cris" : "" %>" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>">
+          <a class="result-card trial-result-card <%= isCris(trial) ? "trial-result-card-cris" : (isBusinessTrial(trial) ? "trial-result-card-business" : "") %>" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>">
             <div class="row-between trial-card-head">
               <div>
-                <div class="trial-nct"><%= h(trial.getNctId()) %> · <%= h(sourceLabel(trial)) %></div>
+                <div class="trial-nct"><%= h(sourceId(trial)) %> · <%= h(sourceLabel(trial)) %></div>
                 <h3><%= h(trial.getTitle()) %></h3>
                 <% if (isCris(trial) && trial.getOfficialTitle() != null && !trial.getOfficialTitle().isBlank()) { %>
                   <div class="trial-card-english-title"><%= h(trial.getOfficialTitle()) %></div>
