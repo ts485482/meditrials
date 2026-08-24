@@ -108,6 +108,44 @@ public class BusinessServiceImpl implements BusinessService {
         return business;
     }
 
+    @Override
+    @Transactional
+    public BusinessVO updateBusinessProfile(
+            Long memberNo,
+            String phone,
+            String email,
+            String address,
+            String description) {
+
+        if (memberNo == null) {
+            throw new IllegalArgumentException("MEMBER_NO_REQUIRED");
+        }
+
+        BusinessVO business = businessDAO.selectBusinessByMemberNo(memberNo);
+        if (business == null) {
+            throw new IllegalStateException("BUSINESS_NOT_FOUND");
+        }
+
+        String normalizedPhone = trim(phone);
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedPhone.isEmpty() || normalizedEmail.isEmpty()) {
+            throw new IllegalArgumentException("CONTACT_REQUIRED");
+        }
+
+        int updatedRows = businessDAO.updateBusinessProfile(
+                memberNo,
+                normalizedPhone,
+                normalizedEmail,
+                trimToNull(address),
+                trimToNull(description));
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("BUSINESS_UPDATE_FAILED");
+        }
+
+        return businessDAO.selectBusinessByMemberNo(memberNo);
+    }
+
     private String normalizeEmail(String email) {
         return trim(email).toLowerCase(Locale.ROOT);
     }

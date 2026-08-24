@@ -18,4 +18,11 @@ public interface BusinessService {
             String memberName,
             String memberPhone,
             BusinessVO business);
+
+    BusinessVO updateBusinessProfile(
+            Long memberNo,
+            String phone,
+            String email,
+            String address,
+            String description);
 }

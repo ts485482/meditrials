@@ -116,4 +116,14 @@
         )
     </insert>
 
+    <update id="updateBusinessProfile">
+        UPDATE BUSINESS
+           SET PHONE = #{phone},
+               EMAIL = #{email},
+               ADDRESS = #{address,jdbcType=VARCHAR},
+               DESCRIPTION = #{description,jdbcType=VARCHAR},
+               UPDATED_AT = SYSDATE
+         WHERE MEMBER_NO = #{memberNo}
+    </update>
+
 </mapper>

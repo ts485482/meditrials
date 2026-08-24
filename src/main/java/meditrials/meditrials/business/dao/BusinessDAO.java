@@ -21,4 +21,11 @@ public interface BusinessDAO {
     BusinessVO selectLatestBusiness();
 
     int insertBusiness(BusinessVO business);
+
+    int updateBusinessProfile(
+            @Param("memberNo") Long memberNo,
+            @Param("phone") String phone,
+            @Param("email") String email,
+            @Param("address") String address,
+            @Param("description") String description);
 }
