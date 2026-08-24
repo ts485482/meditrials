@@ -57,6 +57,8 @@
     Number activeCount = request.getAttribute("activeCount") instanceof Number value ? value : 0;
     Number suspendedCount = request.getAttribute("suspendedCount") instanceof Number value ? value : 0;
     Number withdrawnCount = request.getAttribute("withdrawnCount") instanceof Number value ? value : 0;
+    Long currentAdminMemberNo = request.getAttribute("currentAdminMemberNo") instanceof Number value
+            ? value.longValue() : null;
     String pageNotice = request.getAttribute("pageNotice") instanceof String value ? value : null;
     String pageError = request.getAttribute("pageError") instanceof String value ? value : null;
 %>
@@ -126,9 +128,21 @@
               <td><%= h(member.getEmail()) %></td>
               <td><%= h(member.getMemberName()) %></td>
               <td><%= formatDate(member.getCreatedAt()) %></td>
-              <td><%= roleLabel(member.getRoleCode()) %></td>
+              <td>
+                <%= roleLabel(member.getRoleCode()) %>
+                <% if (currentAdminMemberNo != null && currentAdminMemberNo.equals(member.getMemberNo())) { %>
+                  <span class="badge badge-blue" style="margin-left:6px;">본인</span>
+                <% } %>
+              </td>
               <td><span class="badge <%= statusClass(member.getStatus()) %>"><%= statusLabel(member.getStatus()) %></span></td>
-              <td><a class="btn btn-sm btn-outline" href="${pageContext.request.contextPath}/admin/members?memberNo=<%= member.getMemberNo() %><%= keyword.isBlank() ? "" : "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8) %>">상세</a></td>
+              <td>
+                <a class="btn btn-sm btn-outline" href="${pageContext.request.contextPath}/admin/members?memberNo=<%= member.getMemberNo() %><%= keyword.isBlank() ? "" : "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8) %>">상세</a>
+                <% if (currentAdminMemberNo != null && currentAdminMemberNo.equals(member.getMemberNo())) { %>
+                  <span class="text-muted" style="margin-left:8px;font-size:13px;">현재 로그인 계정</span>
+                <% } else if ("ADMIN".equals(member.getRoleCode())) { %>
+                  <span class="text-muted" style="margin-left:8px;font-size:13px;">관리자 계정</span>
+                <% } %>
+              </td>
             </tr>
           <% } %>
         <% } %>
@@ -177,7 +191,14 @@
             <% } %>
           </div>
         <% } else if ("ADMIN".equals(selectedMember.getRoleCode())) { %>
-          <div class="notice" style="margin-top:18px;">관리자 계정은 이 화면에서 이용 정지 상태로 변경할 수 없습니다.</div>
+          <% boolean isCurrentAdmin = currentAdminMemberNo != null && currentAdminMemberNo.equals(selectedMember.getMemberNo()); %>
+          <div class="notice" style="margin-top:18px;">
+            <% if (isCurrentAdmin) { %>
+              <strong>현재 로그인한 관리자 계정입니다.</strong> 본인 계정은 회원 관리 화면에서 이용 상태를 변경할 수 없습니다.
+            <% } else { %>
+              <strong>다른 관리자 계정입니다.</strong> 관리자 계정은 회원 관리 화면에서 이용 상태를 변경할 수 없습니다.
+            <% } %>
+          </div>
         <% } %>
       </section>
     <% } %>

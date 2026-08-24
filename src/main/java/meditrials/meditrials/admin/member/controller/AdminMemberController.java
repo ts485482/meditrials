@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.servlet.http.HttpSession;
+
 import meditrials.meditrials.admin.member.service.AdminMemberService;
+import meditrials.meditrials.common.constant.SessionConstants;
 
 @Controller
 @RequestMapping("/admin/members")
@@ -25,6 +28,7 @@ public class AdminMemberController {
     public String members(
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(required = false) Long memberNo,
+            HttpSession session,
             Model model) {
 
         model.addAttribute("members", adminMemberService.getMembers(keyword));
@@ -32,6 +36,7 @@ public class AdminMemberController {
         model.addAttribute("activeCount", adminMemberService.getActiveCount());
         model.addAttribute("suspendedCount", adminMemberService.getSuspendedCount());
         model.addAttribute("withdrawnCount", adminMemberService.getWithdrawnCount());
+        model.addAttribute("currentAdminMemberNo", session.getAttribute(SessionConstants.LOGIN_MEMBER_NO));
 
         if (memberNo != null) {
             model.addAttribute("selectedMember", adminMemberService.getMember(memberNo));
