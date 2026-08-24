@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.favorite.dao.FavoriteDAO">
+
+    <resultMap id="favoriteDiseaseResultMap" type="meditrials.meditrials.disease.vo.DiseaseVO">
+        <id property="diseaseNo" column="DISEASE_NO"/>
+        <result property="sourceType" column="SOURCE_TYPE"/>
+        <result property="sourceCode" column="SOURCE_CODE"/>
+        <result property="diseaseName" column="DISEASE_NAME"/>
+        <result property="englishName" column="ENGLISH_NAME"/>
+        <result property="category" column="CATEGORY"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="symptomText" column="SYMPTOM_TEXT"/>
+        <result property="sourceUrl" column="SOURCE_URL"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <resultMap id="favoriteTrialResultMap" type="meditrials.meditrials.trial.vo.TrialVO">
+        <id property="trialNo" column="TRIAL_NO"/>
+        <result property="nctId" column="NCT_ID"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="sourceType" column="SOURCE_TYPE"/>
+        <result property="title" column="TITLE"/>
+        <result property="officialTitle" column="OFFICIAL_TITLE"/>
+        <result property="briefSummary" column="BRIEF_SUMMARY"/>
+        <result property="phase" column="PHASE"/>
+        <result property="studyType" column="STUDY_TYPE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="eligibilityText" column="ELIGIBILITY_TEXT"/>
+        <result property="sex" column="SEX"/>
+        <result property="minAge" column="MIN_AGE"/>
+        <result property="maxAge" column="MAX_AGE"/>
+        <result property="enrollmentTarget" column="ENROLLMENT_TARGET"/>
+        <result property="enrollmentCurrent" column="ENROLLMENT_CURRENT"/>
+        <result property="leadSponsor" column="LEAD_SPONSOR"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="locationText" column="LOCATION_TEXT"/>
+        <result property="contactName" column="CONTACT_NAME"/>
+        <result property="contactPhone" column="CONTACT_PHONE"/>
+        <result property="contactEmail" column="CONTACT_EMAIL"/>
+        <result property="startDateText" column="START_DATE_TEXT"/>
+        <result property="completionDateText" column="COMPLETION_DATE_TEXT"/>
+        <result property="reviewStatus" column="REVIEW_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="viewCount" column="VIEW_COUNT"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <select id="countFavoriteDisease" resultType="int">
+        SELECT COUNT(*)
+          FROM FAVORITE_DISEASE
+         WHERE MEMBER_NO = #{memberNo}
+           AND DISEASE_NO = #{diseaseNo}
+    </select>
+
+    <insert id="insertFavoriteDisease">
+        MERGE INTO FAVORITE_DISEASE F
+        USING (
+            SELECT #{memberNo} AS MEMBER_NO,
+                   #{diseaseNo} AS DISEASE_NO
+              FROM DUAL
+        ) S
+        ON (F.MEMBER_NO = S.MEMBER_NO AND F.DISEASE_NO = S.DISEASE_NO)
+        WHEN NOT MATCHED THEN
+            INSERT (MEMBER_NO, DISEASE_NO, CREATED_AT)
+            VALUES (S.MEMBER_NO, S.DISEASE_NO, SYSDATE)
+    </insert>
+
+    <delete id="deleteFavoriteDisease">
+        DELETE FROM FAVORITE_DISEASE
+         WHERE MEMBER_NO = #{memberNo}
+           AND DISEASE_NO = #{diseaseNo}
+    </delete>
+
+    <select id="selectFavoriteDiseaseList" resultMap="favoriteDiseaseResultMap">
+        SELECT
+            D.DISEASE_NO,
+            D.SOURCE_TYPE,
+            D.SOURCE_CODE,
+            D.DISEASE_NAME,
+            D.ENGLISH_NAME,
+            D.CATEGORY,
+            D.DESCRIPTION,
+            D.SYMPTOM_TEXT,
+            D.SOURCE_URL,
+            D.CREATED_AT,
+            D.UPDATED_AT
+          FROM FAVORITE_DISEASE F
+          JOIN DISEASE D
+            ON D.DISEASE_NO = F.DISEASE_NO
+         WHERE F.MEMBER_NO = #{memberNo}
+         ORDER BY F.CREATED_AT DESC, D.DISEASE_NO DESC
+    </select>
+
+    <select id="countFavoriteTrial" resultType="int">
+        SELECT COUNT(*)
+          FROM FAVORITE_TRIAL
+         WHERE MEMBER_NO = #{memberNo}
+           AND TRIAL_NO = #{trialNo}
+    </select>
+
+    <insert id="insertFavoriteTrial">
+        MERGE INTO FAVORITE_TRIAL F
+        USING (
+            SELECT #{memberNo} AS MEMBER_NO,
+                   #{trialNo} AS TRIAL_NO
+              FROM DUAL
+        ) S
+        ON (F.MEMBER_NO = S.MEMBER_NO AND F.TRIAL_NO = S.TRIAL_NO)
+        WHEN NOT MATCHED THEN
+            INSERT (MEMBER_NO, TRIAL_NO, CREATED_AT)
+            VALUES (S.MEMBER_NO, S.TRIAL_NO, SYSDATE)
+    </insert>
+
+    <delete id="deleteFavoriteTrial">
+        DELETE FROM FAVORITE_TRIAL
+         WHERE MEMBER_NO = #{memberNo}
+           AND TRIAL_NO = #{trialNo}
+    </delete>
+
+    <select id="selectFavoriteTrialList" resultMap="favoriteTrialResultMap">
+        SELECT
+            T.TRIAL_NO,
+            T.NCT_ID,
+            T.BUSINESS_NO,
+            T.SOURCE_TYPE,
+            T.TITLE,
+            T.OFFICIAL_TITLE,
+            T.BRIEF_SUMMARY,
+            T.PHASE,
+            T.STUDY_TYPE,
+            T.RECRUITMENT_STATUS,
+            T.ELIGIBILITY_TEXT,
+            T.SEX,
+            T.MIN_AGE,
+            T.MAX_AGE,
+            T.ENROLLMENT_TARGET,
+            T.ENROLLMENT_CURRENT,
+            T.LEAD_SPONSOR,
+            T.INSTITUTION_NAME,
+            T.LOCATION_TEXT,
+            T.CONTACT_NAME,
+            T.CONTACT_PHONE,
+            T.CONTACT_EMAIL,
+            T.START_DATE_TEXT,
+            T.COMPLETION_DATE_TEXT,
+            T.REVIEW_STATUS,
+            T.REJECT_REASON,
+            T.VIEW_COUNT,
+            T.CREATED_AT,
+            T.UPDATED_AT
+          FROM FAVORITE_TRIAL F
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = F.TRIAL_NO
+         WHERE F.MEMBER_NO = #{memberNo}
+         ORDER BY F.CREATED_AT DESC, T.TRIAL_NO DESC
+    </select>
+
+</mapper>

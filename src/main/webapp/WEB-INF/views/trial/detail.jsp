@@ -63,6 +63,10 @@
     String externalId = trial == null ? "" : h(trial.getNctId());
     boolean cris = isCris(trial);
     String sourceName = cris ? "질병관리청 CRIS" : "ClinicalTrials.gov";
+    boolean favoriteTrial = Boolean.TRUE.equals(request.getAttribute("favoriteTrial"));
+    Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
+    boolean loginUser = "USER".equals(loginRoleValue);
+    boolean loggedIn = loginRoleValue != null;
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -153,7 +157,17 @@
           <% } %>
         <% } %>
 
-        <button class="btn btn-outline w-100 mt-20" type="button" disabled title="관심 임상시험 기능 연결 예정">♡ 관심 등록</button>
+        <% if (loginUser) { %>
+          <form method="post" action="${pageContext.request.contextPath}/mypage/favorites/trials/<%= trial.getTrialNo() %>">
+            <button class="btn <%= favoriteTrial ? "btn-light" : "btn-outline" %> w-100 mt-20" type="submit">
+              <%= favoriteTrial ? "♥ 관심 해제" : "♡ 관심 등록" %>
+            </button>
+          </form>
+        <% } else if (!loggedIn) { %>
+          <a class="btn btn-outline w-100 mt-20" href="${pageContext.request.contextPath}/login?required=true">♡ 관심 등록</a>
+        <% } else { %>
+          <button class="btn btn-outline w-100 mt-20" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">♡ 관심 등록</button>
+        <% } %>
         <a class="btn btn-primary w-100 mt-20" href="${pageContext.request.contextPath}/trials/<%= trial == null ? "" : trial.getTrialNo() %>/inquiries/new">참여 문의</a>
 
         <p class="trial-source-note">
