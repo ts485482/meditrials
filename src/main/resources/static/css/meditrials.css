@@ -177,7 +177,7 @@ textarea.form-control{min-height:130px;resize:vertical}
 .mt-logo-mark{width:32px;height:32px;flex:0 0 32px}
 .mt-nav{gap:34px;font-size:15px;color:#26384f}
 .mt-search{min-width:280px;height:42px;border-color:#bcd3ef;background:#fff}
-.mt-search input{font-size:13px;color:#4f6075}
+.mt-search input{font-size:13px;color:#4f6075;flex:1 1 auto;min-width:0;width:auto}
 .mt-search input::placeholder{color:#a8b2bf}
 .mt-auth{gap:8px}
 .mt-auth .btn{height:42px;display:inline-flex;align-items:center;justify-content:center}
@@ -304,13 +304,20 @@ textarea.form-control{min-height:130px;resize:vertical}
 
 /* common header integrated-search submit button */
 .mt-search button{
-  flex:0 0 auto;
+  flex:0 0 58px;
+  height:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   border:0;
-  border-left:1px solid #e3eaf2;
   padding:0 14px;
-  background:#f8fbff;
-  color:#1769d2;
+  background:var(--primary);
+  color:#fff;
   font-size:12px;
   font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+  transition:background .15s ease;
 }
-.mt-search button:hover{background:#edf5ff}
+.mt-search button:hover{background:#0f5dbf}
+.mt-search button:focus-visible{outline:2px solid #7eb5f3;outline-offset:-3px}
