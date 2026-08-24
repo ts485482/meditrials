@@ -72,9 +72,12 @@ public class CrisClinicalTrialClient {
                     .body(Map.class);
 
             validateResponse(raw);
-            Object body = findValue(raw, "body");
-            Integer totalCount = readInteger(findValue(body, "totalCount"));
-            List<TrialVO> trials = parseItems(findValue(body, "items"));
+
+            // CRIS JSON은 응답 시점/게이트웨이에 따라 body 내부 구조 또는
+            // resultCode/totalCount/item이 최상위에 위치하는 평면 구조로 내려올 수 있다.
+            // 특정 body 구조를 가정하지 않고 응답 전체에서 값을 찾는다.
+            Integer totalCount = readInteger(findValue(raw, "totalCount"));
+            List<TrialVO> trials = parseItems(raw);
 
             CrisSearchResult result = new CrisSearchResult(trials, totalCount);
             cache.put(cacheKey, new CacheEntry(result, Instant.now()));
@@ -105,33 +108,43 @@ public class CrisClinicalTrialClient {
         throw new CrisClinicalTrialException("CRIS API 오류 " + resultCode + ": " + message);
     }
 
-    private List<TrialVO> parseItems(Object itemsObject) {
-        Object candidate = itemsObject;
-        if (candidate instanceof Map<?, ?> map) {
-            Object item = valueIgnoreCase(map, "item");
-            if (item != null) {
-                candidate = item;
-            }
-        }
-
-        List<?> items;
-        if (candidate instanceof List<?> list) {
-            items = list;
-        } else if (candidate instanceof Map<?, ?> map) {
-            items = List.of(map);
-        } else {
-            items = List.of();
-        }
+    private List<TrialVO> parseItems(Object responseObject) {
+        List<Map<?, ?>> itemMaps = new ArrayList<>();
+        collectTrialItems(responseObject, itemMaps);
 
         List<TrialVO> trials = new ArrayList<>();
-        for (Object itemObject : items) {
-            Map<?, ?> item = asMap(itemObject);
+        for (Map<?, ?> item : itemMaps) {
             TrialVO trial = parseTrial(item);
             if (trial != null) {
                 trials.add(trial);
             }
         }
         return trials;
+    }
+
+    private void collectTrialItems(Object value, List<Map<?, ?>> target) {
+        if (value instanceof Map<?, ?> map) {
+            Object trialId = valueIgnoreCase(map, "trial_id");
+            Object titleKr = valueIgnoreCase(map, "scientific_title_kr");
+
+            // CRIS 목록의 실제 연구 레코드는 trial_id와 scientific_title_kr를
+            // 직접 가진다. 응답 wrapper 이름(response/body/items/item)에 의존하지 않는다.
+            if (trialId != null && titleKr != null) {
+                target.add(map);
+                return;
+            }
+
+            for (Object nested : map.values()) {
+                collectTrialItems(nested, target);
+            }
+            return;
+        }
+
+        if (value instanceof List<?> list) {
+            for (Object nested : list) {
+                collectTrialItems(nested, target);
+            }
+        }
     }
 
     private TrialVO parseTrial(Map<?, ?> item) {
