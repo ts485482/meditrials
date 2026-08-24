@@ -17,4 +17,15 @@ public interface TrialInquiryDAO {
     TrialInquiryVO selectMemberInquiry(
             @Param("memberNo") Long memberNo,
             @Param("inquiryNo") Long inquiryNo);
+
+    List<TrialInquiryVO> selectBusinessInquiries(@Param("businessNo") Long businessNo);
+
+    TrialInquiryVO selectBusinessInquiry(
+            @Param("businessNo") Long businessNo,
+            @Param("inquiryNo") Long inquiryNo);
+
+    int updateBusinessAnswer(
+            @Param("businessNo") Long businessNo,
+            @Param("inquiryNo") Long inquiryNo,
+            @Param("answer") String answer);
 }

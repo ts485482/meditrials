@@ -19,6 +19,8 @@
         <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
         <result property="sourceType" column="SOURCE_TYPE"/>
         <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="memberName" column="MEMBER_NAME"/>
+        <result property="memberEmail" column="MEMBER_EMAIL"/>
     </resultMap>
 
     <insert id="insertInquiry" parameterType="meditrials.meditrials.inquiry.vo.TrialInquiryVO">
@@ -95,5 +97,72 @@
         WHERE I.MEMBER_NO = #{memberNo}
           AND I.INQUIRY_NO = #{inquiryNo}
     </select>
+
+    <select id="selectBusinessInquiries" resultMap="trialInquiryResultMap">
+        SELECT
+            I.INQUIRY_NO,
+            I.MEMBER_NO,
+            I.TRIAL_NO,
+            I.BUSINESS_NO,
+            I.SUBJECT,
+            I.QUESTION,
+            I.ANSWER,
+            I.STATUS,
+            I.CREATED_AT,
+            I.ANSWERED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.SOURCE_TYPE,
+            T.INSTITUTION_NAME,
+            M.MEMBER_NAME,
+            M.EMAIL AS MEMBER_EMAIL
+        FROM TRIAL_INQUIRY I
+        JOIN CLINICAL_TRIAL T
+          ON T.TRIAL_NO = I.TRIAL_NO
+        JOIN MEMBER M
+          ON M.MEMBER_NO = I.MEMBER_NO
+        WHERE I.BUSINESS_NO = #{businessNo}
+        ORDER BY
+            CASE WHEN I.STATUS = 'WAITING' THEN 0 ELSE 1 END,
+            I.CREATED_AT DESC,
+            I.INQUIRY_NO DESC
+    </select>
+
+    <select id="selectBusinessInquiry" resultMap="trialInquiryResultMap">
+        SELECT
+            I.INQUIRY_NO,
+            I.MEMBER_NO,
+            I.TRIAL_NO,
+            I.BUSINESS_NO,
+            I.SUBJECT,
+            I.QUESTION,
+            I.ANSWER,
+            I.STATUS,
+            I.CREATED_AT,
+            I.ANSWERED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.SOURCE_TYPE,
+            T.INSTITUTION_NAME,
+            M.MEMBER_NAME,
+            M.EMAIL AS MEMBER_EMAIL
+        FROM TRIAL_INQUIRY I
+        JOIN CLINICAL_TRIAL T
+          ON T.TRIAL_NO = I.TRIAL_NO
+        JOIN MEMBER M
+          ON M.MEMBER_NO = I.MEMBER_NO
+        WHERE I.BUSINESS_NO = #{businessNo}
+          AND I.INQUIRY_NO = #{inquiryNo}
+    </select>
+
+    <update id="updateBusinessAnswer">
+        UPDATE TRIAL_INQUIRY
+           SET ANSWER = #{answer,jdbcType=CLOB},
+               STATUS = 'ANSWERED',
+               ANSWERED_AT = SYSDATE
+         WHERE BUSINESS_NO = #{businessNo}
+           AND INQUIRY_NO = #{inquiryNo}
+           AND STATUS IN ('WAITING', 'ANSWERED')
+    </update>
 
 </mapper>

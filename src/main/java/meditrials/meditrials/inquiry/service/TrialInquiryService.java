@@ -11,4 +11,10 @@ public interface TrialInquiryService {
     List<TrialInquiryVO> getMemberInquiries(Long memberNo);
 
     TrialInquiryVO getMemberInquiry(Long memberNo, Long inquiryNo);
+
+    List<TrialInquiryVO> getBusinessInquiries(Long businessNo);
+
+    TrialInquiryVO getBusinessInquiry(Long businessNo, Long inquiryNo);
+
+    void answerBusinessInquiry(Long businessNo, Long inquiryNo, String answer);
 }

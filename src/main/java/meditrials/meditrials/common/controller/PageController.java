@@ -65,10 +65,6 @@ public class PageController {
         return "business/trials/form";
     }
 
-    @GetMapping("/business/inquiries")
-    public String businessInquiries() {
-        return "business/inquiries";
-    }
 
     @GetMapping("/business/plans")
     public String businessPlans() {

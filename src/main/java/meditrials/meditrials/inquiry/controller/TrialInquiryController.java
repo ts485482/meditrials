@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import meditrials.meditrials.business.service.BusinessService;
+import meditrials.meditrials.business.vo.BusinessVO;
 import meditrials.meditrials.common.constant.SessionConstants;
 import meditrials.meditrials.inquiry.service.TrialInquiryService;
 import meditrials.meditrials.inquiry.vo.TrialInquiryVO;
@@ -22,12 +24,15 @@ public class TrialInquiryController {
 
     private final TrialInquiryService trialInquiryService;
     private final TrialService trialService;
+    private final BusinessService businessService;
 
     public TrialInquiryController(
             TrialInquiryService trialInquiryService,
-            TrialService trialService) {
+            TrialService trialService,
+            BusinessService businessService) {
         this.trialInquiryService = trialInquiryService;
         this.trialService = trialService;
+        this.businessService = businessService;
     }
 
     @GetMapping("/trials/{trialNo}/inquiries/new")
@@ -99,7 +104,7 @@ public class TrialInquiryController {
         }
 
         List<TrialInquiryVO> inquiries = trialInquiryService.getMemberInquiries(memberNo);
-        TrialInquiryVO selectedInquiry = resolveSelectedInquiry(memberNo, inquiryNo, inquiries);
+        TrialInquiryVO selectedInquiry = resolveMemberSelectedInquiry(memberNo, inquiryNo, inquiries);
 
         model.addAttribute("inquiries", inquiries);
         model.addAttribute("selectedInquiry", selectedInquiry);
@@ -109,7 +114,67 @@ public class TrialInquiryController {
         return "mypage/inquiries";
     }
 
-    private TrialInquiryVO resolveSelectedInquiry(
+    @GetMapping("/business/inquiries")
+    public String businessInquiries(
+            @RequestParam(name = "inquiryNo", required = false) Long inquiryNo,
+            @RequestParam(name = "answered", defaultValue = "false") boolean answered,
+            HttpServletRequest request,
+            Model model) {
+
+        BusinessVO business = getLoginBusiness(request);
+        if (business == null) {
+            model.addAttribute("businessError", "로그인 계정에 연결된 사업자 정보를 찾을 수 없습니다.");
+            model.addAttribute("inquiries", List.of());
+            return "business/inquiries";
+        }
+
+        List<TrialInquiryVO> inquiries = trialInquiryService.getBusinessInquiries(business.getBusinessNo());
+        TrialInquiryVO selectedInquiry = resolveBusinessSelectedInquiry(
+                business.getBusinessNo(), inquiryNo, inquiries);
+
+        model.addAttribute("business", business);
+        model.addAttribute("inquiries", inquiries);
+        model.addAttribute("selectedInquiry", selectedInquiry);
+        model.addAttribute("waitingCount", countByStatus(inquiries, "WAITING"));
+        model.addAttribute("answeredCount", countByStatus(inquiries, "ANSWERED"));
+        if (answered) {
+            model.addAttribute("pageNotice", "문의 답변이 저장되었습니다.");
+        }
+        return "business/inquiries";
+    }
+
+    @PostMapping("/business/inquiries/{inquiryNo}/answer")
+    public String answerBusinessInquiry(
+            @PathVariable Long inquiryNo,
+            @RequestParam(name = "answer", defaultValue = "") String answer,
+            HttpServletRequest request,
+            Model model) {
+
+        BusinessVO business = getLoginBusiness(request);
+        if (business == null) {
+            return "redirect:/business/inquiries";
+        }
+
+        try {
+            trialInquiryService.answerBusinessInquiry(business.getBusinessNo(), inquiryNo, answer);
+            return "redirect:/business/inquiries?answered=true&inquiryNo=" + inquiryNo;
+        } catch (IllegalArgumentException exception) {
+            List<TrialInquiryVO> inquiries = trialInquiryService.getBusinessInquiries(business.getBusinessNo());
+            TrialInquiryVO selectedInquiry = trialInquiryService.getBusinessInquiry(
+                    business.getBusinessNo(), inquiryNo);
+
+            model.addAttribute("business", business);
+            model.addAttribute("inquiries", inquiries);
+            model.addAttribute("selectedInquiry", selectedInquiry);
+            model.addAttribute("waitingCount", countByStatus(inquiries, "WAITING"));
+            model.addAttribute("answeredCount", countByStatus(inquiries, "ANSWERED"));
+            model.addAttribute("answerInput", answer == null ? "" : answer.trim());
+            model.addAttribute("formError", exception.getMessage());
+            return "business/inquiries";
+        }
+    }
+
+    private TrialInquiryVO resolveMemberSelectedInquiry(
             Long memberNo,
             Long inquiryNo,
             List<TrialInquiryVO> inquiries) {
@@ -121,6 +186,26 @@ public class TrialInquiryController {
             }
         }
         return inquiries.isEmpty() ? null : inquiries.get(0);
+    }
+
+    private TrialInquiryVO resolveBusinessSelectedInquiry(
+            Long businessNo,
+            Long inquiryNo,
+            List<TrialInquiryVO> inquiries) {
+
+        if (inquiryNo != null) {
+            TrialInquiryVO selected = trialInquiryService.getBusinessInquiry(businessNo, inquiryNo);
+            if (selected != null) {
+                return selected;
+            }
+        }
+        return inquiries.isEmpty() ? null : inquiries.get(0);
+    }
+
+    private long countByStatus(List<TrialInquiryVO> inquiries, String status) {
+        return inquiries.stream()
+                .filter(inquiry -> status.equals(inquiry.getStatus()))
+                .count();
     }
 
     private String renderFormError(
@@ -135,6 +220,14 @@ public class TrialInquiryController {
         model.addAttribute("question", question == null ? "" : question.trim());
         model.addAttribute("formError", errorMessage);
         return "trial/inquiry-form";
+    }
+
+    private BusinessVO getLoginBusiness(HttpServletRequest request) {
+        Long memberNo = getLoginMemberNo(request);
+        if (memberNo == null) {
+            return null;
+        }
+        return businessService.getBusinessByMemberNo(memberNo);
     }
 
     private Long getLoginMemberNo(HttpServletRequest request) {

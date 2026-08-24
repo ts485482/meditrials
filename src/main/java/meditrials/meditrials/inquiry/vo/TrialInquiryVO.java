@@ -20,6 +20,8 @@ public class TrialInquiryVO {
     private String recruitmentStatus;
     private String sourceType;
     private String institutionName;
+    private String memberName;
+    private String memberEmail;
 
     public Long getInquiryNo() {
         return inquiryNo;
@@ -131,5 +133,21 @@ public class TrialInquiryVO {
 
     public void setInstitutionName(String institutionName) {
         this.institutionName = institutionName;
+    }
+
+    public String getMemberName() {
+        return memberName;
+    }
+
+    public void setMemberName(String memberName) {
+        this.memberName = memberName;
+    }
+
+    public String getMemberEmail() {
+        return memberEmail;
+    }
+
+    public void setMemberEmail(String memberEmail) {
+        this.memberEmail = memberEmail;
     }
 }

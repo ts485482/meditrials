@@ -84,6 +84,51 @@ public class TrialInquiryServiceImpl implements TrialInquiryService {
         return trialInquiryDAO.selectMemberInquiry(memberNo, inquiryNo);
     }
 
+    @Override
+    public List<TrialInquiryVO> getBusinessInquiries(Long businessNo) {
+        if (businessNo == null) {
+            return List.of();
+        }
+        return trialInquiryDAO.selectBusinessInquiries(businessNo);
+    }
+
+    @Override
+    public TrialInquiryVO getBusinessInquiry(Long businessNo, Long inquiryNo) {
+        if (businessNo == null || inquiryNo == null) {
+            return null;
+        }
+        return trialInquiryDAO.selectBusinessInquiry(businessNo, inquiryNo);
+    }
+
+    @Override
+    @Transactional
+    public void answerBusinessInquiry(Long businessNo, Long inquiryNo, String answer) {
+        if (businessNo == null) {
+            throw new IllegalArgumentException("사업자 정보를 확인할 수 없습니다.");
+        }
+        if (inquiryNo == null) {
+            throw new IllegalArgumentException("답변할 문의를 확인할 수 없습니다.");
+        }
+
+        String normalizedAnswer = normalize(answer);
+        if (normalizedAnswer.isEmpty()) {
+            throw new IllegalArgumentException("답변 내용을 입력해주세요.");
+        }
+
+        TrialInquiryVO inquiry = trialInquiryDAO.selectBusinessInquiry(businessNo, inquiryNo);
+        if (inquiry == null) {
+            throw new IllegalArgumentException("해당 사업자의 문의를 찾을 수 없습니다.");
+        }
+        if ("CLOSED".equals(inquiry.getStatus())) {
+            throw new IllegalArgumentException("종료된 문의에는 답변을 등록할 수 없습니다.");
+        }
+
+        int updated = trialInquiryDAO.updateBusinessAnswer(businessNo, inquiryNo, normalizedAnswer);
+        if (updated != 1) {
+            throw new IllegalStateException("문의 답변을 저장하지 못했습니다.");
+        }
+    }
+
     private String normalize(String value) {
         return value == null ? "" : value.trim();
     }
