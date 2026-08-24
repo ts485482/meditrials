@@ -3,7 +3,6 @@ package meditrials.meditrials.common.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
@@ -48,21 +47,6 @@ public class PageController {
     @GetMapping("/business")
     public String businessDashboard() {
         return "business/dashboard";
-    }
-
-    @GetMapping("/business/trials")
-    public String businessTrials() {
-        return "business/trials/list";
-    }
-
-    @GetMapping("/business/trials/form")
-    public String businessTrialForm() {
-        return "business/trials/form";
-    }
-
-    @GetMapping("/business/trials/{id}/edit")
-    public String businessTrialEdit(@PathVariable String id) {
-        return "business/trials/form";
     }
 
 

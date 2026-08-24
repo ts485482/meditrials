@@ -1,0 +1,38 @@
+.business-trial-notice,
+.business-trial-error{
+  margin-bottom:18px;
+  padding:14px 16px;
+  border-radius:10px;
+  font-size:14px;
+}
+.business-trial-notice{background:#eaf8f2;border:1px solid #bfe8d5;color:#1d795b}
+.business-trial-error{background:#fff0f1;border:1px solid #f0c7cb;color:#b23b48}
+.business-trial-approval-notice{margin-bottom:20px;line-height:1.7}
+.business-trial-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.business-trial-summary .stat-card{padding:16px 18px}
+.business-trial-summary .stat-card strong{font-size:24px}
+.business-trial-empty{background:#fff;border:1px solid var(--line);border-radius:12px;padding:54px 20px;text-align:center}
+.business-trial-table-card{overflow-x:auto}
+.business-trial-table{min-width:980px}
+.business-trial-title-cell strong{display:block;color:#173f79;line-height:1.45}
+.business-trial-reject-reason{display:block;margin-top:7px;color:#c24b58;line-height:1.45}
+.business-trial-form{max-width:1060px}
+.business-trial-form-card{margin-bottom:18px;padding:24px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.business-trial-form-card h2{margin:0 0 20px;color:#173f79;font-size:20px}
+.business-trial-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.business-trial-current-status{font-size:13px;color:#68768a}
+.business-trial-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.business-trial-span-2{grid-column:1 / -1}
+.business-trial-textarea{min-height:150px}
+.business-trial-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+.business-trial-form-actions .btn{min-width:130px}
+.business-trial-form-help{margin:12px 0 0;text-align:right;color:#728198;font-size:13px}
+.business-trial-rejected-box{margin-bottom:18px;padding:18px 20px;border-radius:12px;background:#fff7f7;border:1px solid #efcaca;color:#8f3944}
+.business-trial-rejected-box strong{display:block;margin-bottom:8px}
+.business-trial-rejected-box p{margin:0 0 8px;line-height:1.65}
+.business-trial-rejected-box span{font-size:13px;color:#9a5a62}
+@media(max-width:900px){
+  .business-trial-summary{grid-template-columns:repeat(2,1fr)}
+  .business-trial-form-grid{grid-template-columns:1fr}
+  .business-trial-span-2{grid-column:auto}
+}

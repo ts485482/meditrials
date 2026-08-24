@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.business.trial.dao.BusinessTrialDAO">
+
+    <resultMap id="businessTrialResultMap" type="meditrials.meditrials.business.trial.vo.BusinessTrialVO">
+        <id property="trialNo" column="TRIAL_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="diseaseNo" column="DISEASE_NO"/>
+        <result property="diseaseName" column="DISEASE_NAME"/>
+        <result property="title" column="TITLE"/>
+        <result property="phase" column="PHASE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="briefSummary" column="BRIEF_SUMMARY"/>
+        <result property="eligibilityText" column="ELIGIBILITY_TEXT"/>
+        <result property="enrollmentTarget" column="ENROLLMENT_TARGET"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="locationText" column="LOCATION_TEXT"/>
+        <result property="contactName" column="CONTACT_NAME"/>
+        <result property="contactPhone" column="CONTACT_PHONE"/>
+        <result property="contactEmail" column="CONTACT_EMAIL"/>
+        <result property="startDateText" column="START_DATE_TEXT"/>
+        <result property="completionDateText" column="COMPLETION_DATE_TEXT"/>
+        <result property="reviewStatus" column="REVIEW_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="businessTrialColumns">
+        T.TRIAL_NO,
+        T.BUSINESS_NO,
+        TD.DISEASE_NO,
+        D.DISEASE_NAME,
+        T.TITLE,
+        T.PHASE,
+        T.RECRUITMENT_STATUS,
+        T.BRIEF_SUMMARY,
+        T.ELIGIBILITY_TEXT,
+        T.ENROLLMENT_TARGET,
+        T.INSTITUTION_NAME,
+        T.LOCATION_TEXT,
+        T.CONTACT_NAME,
+        T.CONTACT_PHONE,
+        T.CONTACT_EMAIL,
+        T.START_DATE_TEXT,
+        T.COMPLETION_DATE_TEXT,
+        T.REVIEW_STATUS,
+        T.REJECT_REASON,
+        T.CREATED_AT,
+        T.UPDATED_AT
+    </sql>
+
+    <select id="selectBusinessTrialList" resultMap="businessTrialResultMap">
+        SELECT <include refid="businessTrialColumns"/>
+          FROM CLINICAL_TRIAL T
+          LEFT JOIN TRIAL_DISEASE TD
+            ON TD.TRIAL_NO = T.TRIAL_NO
+          LEFT JOIN DISEASE D
+            ON D.DISEASE_NO = TD.DISEASE_NO
+         WHERE T.BUSINESS_NO = #{businessNo}
+           AND T.SOURCE_TYPE = 'BUSINESS'
+         ORDER BY T.TRIAL_NO DESC
+    </select>
+
+    <select id="selectBusinessTrialByNo" resultMap="businessTrialResultMap">
+        SELECT <include refid="businessTrialColumns"/>
+          FROM CLINICAL_TRIAL T
+          LEFT JOIN TRIAL_DISEASE TD
+            ON TD.TRIAL_NO = T.TRIAL_NO
+          LEFT JOIN DISEASE D
+            ON D.DISEASE_NO = TD.DISEASE_NO
+         WHERE T.TRIAL_NO = #{trialNo}
+           AND T.BUSINESS_NO = #{businessNo}
+           AND T.SOURCE_TYPE = 'BUSINESS'
+    </select>
+
+    <insert id="insertBusinessTrial" parameterType="meditrials.meditrials.business.trial.vo.BusinessTrialVO">
+        <selectKey keyProperty="trialNo" resultType="long" order="BEFORE">
+            SELECT SEQ_CLINICAL_TRIAL.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO CLINICAL_TRIAL (
+            TRIAL_NO,
+            NCT_ID,
+            BUSINESS_NO,
+            SOURCE_TYPE,
+            TITLE,
+            OFFICIAL_TITLE,
+            BRIEF_SUMMARY,
+            PHASE,
+            STUDY_TYPE,
+            RECRUITMENT_STATUS,
+            ELIGIBILITY_TEXT,
+            SEX,
+            MIN_AGE,
+            MAX_AGE,
+            ENROLLMENT_TARGET,
+            ENROLLMENT_CURRENT,
+            LEAD_SPONSOR,
+            INSTITUTION_NAME,
+            LOCATION_TEXT,
+            CONTACT_NAME,
+            CONTACT_PHONE,
+            CONTACT_EMAIL,
+            START_DATE_TEXT,
+            COMPLETION_DATE_TEXT,
+            REVIEW_STATUS,
+            REJECT_REASON,
+            VIEW_COUNT,
+            CREATED_AT,
+            UPDATED_AT
+        ) VALUES (
+            #{trialNo},
+            NULL,
+            #{businessNo},
+            'BUSINESS',
+            #{title},
+            #{title},
+            #{briefSummary,jdbcType=CLOB},
+            #{phase,jdbcType=VARCHAR},
+            'INTERVENTIONAL',
+            #{recruitmentStatus,jdbcType=VARCHAR},
+            #{eligibilityText,jdbcType=CLOB},
+            'ALL',
+            NULL,
+            NULL,
+            #{enrollmentTarget,jdbcType=NUMERIC},
+            0,
+            #{institutionName,jdbcType=VARCHAR},
+            #{institutionName,jdbcType=VARCHAR},
+            #{locationText,jdbcType=CLOB},
+            #{contactName,jdbcType=VARCHAR},
+            #{contactPhone,jdbcType=VARCHAR},
+            #{contactEmail,jdbcType=VARCHAR},
+            #{startDateText,jdbcType=VARCHAR},
+            #{completionDateText,jdbcType=VARCHAR},
+            #{reviewStatus},
+            NULL,
+            0,
+            SYSDATE,
+            NULL
+        )
+    </insert>
+
+    <update id="updateBusinessTrial" parameterType="meditrials.meditrials.business.trial.vo.BusinessTrialVO">
+        UPDATE CLINICAL_TRIAL
+           SET TITLE = #{title},
+               OFFICIAL_TITLE = #{title},
+               BRIEF_SUMMARY = #{briefSummary,jdbcType=CLOB},
+               PHASE = #{phase,jdbcType=VARCHAR},
+               STUDY_TYPE = 'INTERVENTIONAL',
+               RECRUITMENT_STATUS = #{recruitmentStatus,jdbcType=VARCHAR},
+               ELIGIBILITY_TEXT = #{eligibilityText,jdbcType=CLOB},
+               SEX = 'ALL',
+               ENROLLMENT_TARGET = #{enrollmentTarget,jdbcType=NUMERIC},
+               LEAD_SPONSOR = #{institutionName,jdbcType=VARCHAR},
+               INSTITUTION_NAME = #{institutionName,jdbcType=VARCHAR},
+               LOCATION_TEXT = #{locationText,jdbcType=CLOB},
+               CONTACT_NAME = #{contactName,jdbcType=VARCHAR},
+               CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+               CONTACT_EMAIL = #{contactEmail,jdbcType=VARCHAR},
+               START_DATE_TEXT = #{startDateText,jdbcType=VARCHAR},
+               COMPLETION_DATE_TEXT = #{completionDateText,jdbcType=VARCHAR},
+               REVIEW_STATUS = #{reviewStatus},
+               REJECT_REASON = NULL,
+               UPDATED_AT = SYSDATE
+         WHERE TRIAL_NO = #{trialNo}
+           AND BUSINESS_NO = #{businessNo}
+           AND SOURCE_TYPE = 'BUSINESS'
+    </update>
+
+    <delete id="deleteTrialDisease">
+        DELETE FROM TRIAL_DISEASE
+         WHERE TRIAL_NO = #{trialNo}
+    </delete>
+
+    <insert id="insertTrialDisease">
+        INSERT INTO TRIAL_DISEASE (
+            TRIAL_NO,
+            DISEASE_NO
+        ) VALUES (
+            #{trialNo},
+            #{diseaseNo}
+        )
+    </insert>
+
+</mapper>
