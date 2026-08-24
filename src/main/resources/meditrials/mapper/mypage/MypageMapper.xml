@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.mypage.dao.MypageDAO">
+
+    <resultMap id="memberResultMap" type="meditrials.meditrials.member.vo.MemberVO">
+        <id property="memberNo" column="MEMBER_NO"/>
+        <result property="email" column="EMAIL"/>
+        <result property="passwordHash" column="PASSWORD_HASH"/>
+        <result property="memberName" column="MEMBER_NAME"/>
+        <result property="phone" column="PHONE"/>
+        <result property="roleCode" column="ROLE_CODE"/>
+        <result property="status" column="STATUS"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <resultMap id="summaryResultMap" type="meditrials.meditrials.mypage.vo.MypageSummaryVO">
+        <result property="favoriteDiseaseCount" column="FAVORITE_DISEASE_COUNT"/>
+        <result property="favoriteTrialCount" column="FAVORITE_TRIAL_COUNT"/>
+        <result property="inquiryCount" column="INQUIRY_COUNT"/>
+        <result property="answeredInquiryCount" column="ANSWERED_INQUIRY_COUNT"/>
+    </resultMap>
+
+    <resultMap id="recentItemResultMap" type="meditrials.meditrials.mypage.vo.MypageRecentItemVO">
+        <result property="targetNo" column="TARGET_NO"/>
+        <result property="title" column="TITLE"/>
+        <result property="subtitle" column="SUBTITLE"/>
+        <result property="status" column="STATUS"/>
+        <result property="createdAt" column="CREATED_AT"/>
+    </resultMap>
+
+    <select id="selectSummary" resultMap="summaryResultMap">
+        SELECT
+            (SELECT COUNT(*) FROM FAVORITE_DISEASE WHERE MEMBER_NO = #{memberNo}) AS FAVORITE_DISEASE_COUNT,
+            (SELECT COUNT(*) FROM FAVORITE_TRIAL WHERE MEMBER_NO = #{memberNo}) AS FAVORITE_TRIAL_COUNT,
+            (SELECT COUNT(*) FROM TRIAL_INQUIRY WHERE MEMBER_NO = #{memberNo}) AS INQUIRY_COUNT,
+            (SELECT COUNT(*)
+               FROM TRIAL_INQUIRY
+              WHERE MEMBER_NO = #{memberNo}
+                AND STATUS = 'ANSWERED') AS ANSWERED_INQUIRY_COUNT
+        FROM DUAL
+    </select>
+
+    <select id="selectRecentFavoriteDiseases" resultMap="recentItemResultMap">
+        SELECT TARGET_NO, TITLE, SUBTITLE, STATUS, CREATED_AT
+          FROM (
+                SELECT
+                    D.DISEASE_NO AS TARGET_NO,
+                    D.DISEASE_NAME AS TITLE,
+                    NVL(D.CATEGORY, '분류 정보 없음') AS SUBTITLE,
+                    NULL AS STATUS,
+                    F.CREATED_AT
+                  FROM FAVORITE_DISEASE F
+                  JOIN DISEASE D
+                    ON D.DISEASE_NO = F.DISEASE_NO
+                 WHERE F.MEMBER_NO = #{memberNo}
+                 ORDER BY F.CREATED_AT DESC, D.DISEASE_NO DESC
+               )
+         WHERE ROWNUM &lt;= 3
+    </select>
+
+    <select id="selectRecentFavoriteTrials" resultMap="recentItemResultMap">
+        SELECT TARGET_NO, TITLE, SUBTITLE, STATUS, CREATED_AT
+          FROM (
+                SELECT
+                    T.TRIAL_NO AS TARGET_NO,
+                    T.TITLE,
+                    NVL(T.INSTITUTION_NAME, NVL(T.LEAD_SPONSOR, '기관 정보 없음')) AS SUBTITLE,
+                    T.RECRUITMENT_STATUS AS STATUS,
+                    F.CREATED_AT
+                  FROM FAVORITE_TRIAL F
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = F.TRIAL_NO
+                 WHERE F.MEMBER_NO = #{memberNo}
+                 ORDER BY F.CREATED_AT DESC, T.TRIAL_NO DESC
+               )
+         WHERE ROWNUM &lt;= 3
+    </select>
+
+    <select id="selectRecentInquiries" resultMap="recentItemResultMap">
+        SELECT TARGET_NO, TITLE, SUBTITLE, STATUS, CREATED_AT
+          FROM (
+                SELECT
+                    I.INQUIRY_NO AS TARGET_NO,
+                    I.SUBJECT AS TITLE,
+                    T.TITLE AS SUBTITLE,
+                    I.STATUS,
+                    I.CREATED_AT
+                  FROM TRIAL_INQUIRY I
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = I.TRIAL_NO
+                 WHERE I.MEMBER_NO = #{memberNo}
+                 ORDER BY I.CREATED_AT DESC, I.INQUIRY_NO DESC
+               )
+         WHERE ROWNUM &lt;= 3
+    </select>
+
+    <select id="selectMemberProfile" resultMap="memberResultMap">
+        SELECT
+            MEMBER_NO,
+            EMAIL,
+            PASSWORD_HASH,
+            MEMBER_NAME,
+            PHONE,
+            ROLE_CODE,
+            STATUS,
+            CREATED_AT,
+            UPDATED_AT
+          FROM MEMBER
+         WHERE MEMBER_NO = #{memberNo}
+    </select>
+
+    <update id="updateMemberProfile">
+        UPDATE MEMBER
+           SET MEMBER_NAME = #{memberName},
+               PHONE = #{phone},
+               UPDATED_AT = SYSDATE
+         WHERE MEMBER_NO = #{memberNo}
+           AND ROLE_CODE = 'USER'
+           AND STATUS = 'ACTIVE'
+    </update>
+
+    <update id="updatePasswordHash">
+        UPDATE MEMBER
+           SET PASSWORD_HASH = #{passwordHash},
+               UPDATED_AT = SYSDATE
+         WHERE MEMBER_NO = #{memberNo}
+           AND ROLE_CODE = 'USER'
+           AND STATUS = 'ACTIVE'
+    </update>
+
+</mapper>

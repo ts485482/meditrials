@@ -47,10 +47,4 @@ public class PageController {
     }
 
 
-    @GetMapping("/mypage")
-    public String mypage() {
-        return "mypage/main";
-    }
-
-
 }

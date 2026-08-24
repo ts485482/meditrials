@@ -1,0 +1,32 @@
+.mypage-head p{margin:8px 0 0}
+.mypage-stat-card{display:block;text-decoration:none;color:inherit;transition:transform .15s ease,border-color .15s ease}
+.mypage-stat-card:hover{transform:translateY(-2px);border-color:#b8d0ef}
+.mypage-content-grid{align-items:start}
+.mypage-preview-card{margin-bottom:0}
+.mypage-card-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 12px;gap:12px}
+.mypage-card-head h3{padding:0;margin:0}
+.mypage-card-head a{font-size:13px;font-weight:700;color:#1769d2}
+.mypage-preview-list{padding:0 20px 18px}
+.mypage-preview-list li{border-top:1px solid #edf1f5}
+.mypage-preview-list li:first-child{border-top:0}
+.mypage-preview-list a{display:block;padding:14px 2px;text-decoration:none;color:inherit}
+.mypage-preview-list strong{display:block;color:#243b5a;font-size:14px;line-height:1.5;margin-bottom:4px}
+.mypage-preview-list span:not(.badge){display:block;color:var(--muted);font-size:12px;line-height:1.45}
+.mypage-preview-list small{color:#8995a5;font-size:11px}
+.mypage-preview-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.mypage-empty{padding:18px 22px 24px;color:var(--muted);font-size:13px;border-top:1px solid #edf1f5}
+.mypage-form-card{max-width:720px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px}
+.mypage-account-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.mypage-account-summary>div{border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:15px 16px;min-width:0}
+.mypage-account-summary span{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+.mypage-account-summary strong{display:block;color:#263a55;word-break:break-word}
+.mypage-form-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:8px}
+.mypage-message{max-width:720px;padding:13px 15px;border-radius:9px;margin-bottom:18px;font-size:14px;font-weight:650}
+.mypage-message-success{background:#eafaf3;border:1px solid #bfe8d4;color:#177450}
+.mypage-message-error{background:#fff1f2;border:1px solid #f3c6cb;color:#b93640}
+.mypage-password-guide{margin-bottom:22px;line-height:1.6}
+@media (max-width:760px){
+  .mypage-account-summary{grid-template-columns:1fr}
+  .mypage-form-actions{flex-direction:column-reverse}
+  .mypage-form-actions .btn{width:100%;text-align:center}
+}
