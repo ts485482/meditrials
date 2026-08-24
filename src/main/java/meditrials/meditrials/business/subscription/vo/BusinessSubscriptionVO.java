@@ -2,7 +2,7 @@ package meditrials.meditrials.business.subscription.vo;
 
 import java.time.LocalDateTime;
 
-/** 사업자 프리미엄 신청/결제 상태 화면용 VO. */
+/** 사업자 프리미엄 신청/자동결제 상태 화면용 VO. */
 public class BusinessSubscriptionVO {
 
     private Long subscriptionNo;
@@ -22,6 +22,12 @@ public class BusinessSubscriptionVO {
     private String transactionId;
     private LocalDateTime paidAt;
     private LocalDateTime paymentCreatedAt;
+
+    /** 현재 구독에서 결제 완료(PAID)된 월 결제 건수. */
+    private Integer paidPaymentCount;
+
+    /** 취소 신청이 없을 때 다음 자동결제 예정일. */
+    private LocalDateTime nextBillingDate;
 
     public Long getSubscriptionNo() {
         return subscriptionNo;
@@ -149,5 +155,21 @@ public class BusinessSubscriptionVO {
 
     public void setPaymentCreatedAt(LocalDateTime paymentCreatedAt) {
         this.paymentCreatedAt = paymentCreatedAt;
+    }
+
+    public Integer getPaidPaymentCount() {
+        return paidPaymentCount;
+    }
+
+    public void setPaidPaymentCount(Integer paidPaymentCount) {
+        this.paidPaymentCount = paidPaymentCount;
+    }
+
+    public LocalDateTime getNextBillingDate() {
+        return nextBillingDate;
+    }
+
+    public void setNextBillingDate(LocalDateTime nextBillingDate) {
+        this.nextBillingDate = nextBillingDate;
     }
 }

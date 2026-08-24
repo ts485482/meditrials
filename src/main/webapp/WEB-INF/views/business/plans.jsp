@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.Locale" %>
 <%@ page import="meditrials.meditrials.business.subscription.vo.BusinessSubscriptionVO" %>
@@ -15,15 +16,16 @@
         return NumberFormat.getNumberInstance(Locale.KOREA).format(amount);
     }
 
-    private String formatDate(java.time.LocalDateTime value) {
+    private String formatDate(LocalDateTime value) {
         return value == null ? "-" : value.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
     }
 
-    private String subscriptionLabel(String value) {
-        if ("PENDING".equals(value)) return "승인/결제 대기";
-        if ("ACTIVE".equals(value)) return "이용 중";
+    private String subscriptionLabel(String value, boolean cancelScheduled) {
+        if ("PENDING".equals(value)) return "최초 결제 대기";
+        if ("ACTIVE".equals(value) && cancelScheduled) return "이용 중 · 자동결제 취소 예정";
+        if ("ACTIVE".equals(value)) return "이용 중 · 자동결제";
         if ("EXPIRED".equals(value)) return "이용 만료";
-        if ("CANCELED".equals(value)) return "취소/종료";
+        if ("CANCELED".equals(value)) return "이용 종료";
         return value == null ? "미신청" : value;
     }
 
@@ -51,8 +53,11 @@
     String pageNotice = request.getAttribute("pageNotice") instanceof String value ? value : null;
     String pageError = request.getAttribute("pageError") instanceof String value ? value : null;
     boolean businessApproved = business != null && "APPROVED".equals(business.getApprovalStatus());
-    boolean premiumActive = premium != null && "ACTIVE".equals(premium.getSubscriptionStatus());
+    boolean premiumActive = premium != null
+            && "ACTIVE".equals(premium.getSubscriptionStatus())
+            && (premium.getEndDate() == null || premium.getEndDate().isAfter(LocalDateTime.now()));
     boolean premiumPending = premium != null && "PENDING".equals(premium.getSubscriptionStatus());
+    boolean cancelScheduled = premiumActive && premium.getEndDate() != null;
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -69,12 +74,12 @@
     <div class="dashboard-head">
       <div>
         <h1>요금제 / 프리미엄</h1>
-        <p class="text-muted" style="margin:8px 0 0;">프리미엄 신청 후 관리자가 결제 완료 처리하면 PREMIUM 기능이 활성화됩니다.</p>
+        <p class="text-muted" style="margin:8px 0 0;">PREMIUM 최초 결제 승인 후에는 매월 자동결제되며, 취소 신청 시 현재 결제 주기 종료일까지 이용할 수 있습니다.</p>
       </div>
     </div>
 
     <% if (premiumRequired) { %>
-      <div class="notice" style="margin-bottom:18px;">통계 기능은 PREMIUM 사업자만 이용할 수 있습니다. 프리미엄을 신청하거나 현재 이용 상태를 확인해주세요.</div>
+      <div class="notice" style="margin-bottom:18px;">통계 메뉴는 PREMIUM이 활성화된 사업자에게만 표시됩니다.</div>
     <% } %>
     <% if (pageNotice != null && !pageNotice.isBlank()) { %>
       <div class="notice" style="margin-bottom:18px;background:#e9fbf3;color:#18825e;border-color:#bfead8;"><%= h(pageNotice) %></div>
@@ -97,7 +102,7 @@
       <div class="plan-card premium">
         <span class="badge badge-blue" style="position:absolute;right:22px;top:22px;">추천</span>
         <h2>PREMIUM</h2>
-        <div class="price">₩<%= money(premiumMonthlyFee) %> <small style="font-size:14px">/월</small></div>
+        <div class="price">₩<%= money(premiumMonthlyFee) %> <small style="font-size:14px">/월 · 자동결제</small></div>
         <ul>
           <li>메인/검색 우선 노출</li>
           <li>조회수·관심등록·문의 통계</li>
@@ -108,14 +113,25 @@
         <% if (canApplyPremium) { %>
           <form action="${pageContext.request.contextPath}/business/plans/apply" method="post">
             <button class="btn btn-primary w-100" type="submit"
-                    onclick="return confirm('PREMIUM 이용을 신청하시겠습니까?');">프리미엄 이용 신청</button>
+                    onclick="return confirm('PREMIUM을 신청하시겠습니까? 최초 결제 승인 후 매월 자동결제됩니다.');">프리미엄 이용 신청</button>
           </form>
         <% } else if (!businessApproved) { %>
           <button class="btn btn-outline w-100" type="button" disabled>사업자 승인 후 신청 가능</button>
         <% } else if (premiumPending) { %>
-          <button class="btn btn-outline w-100" type="button" disabled>결제 처리 대기 중</button>
-        <% } else if (premiumActive) { %>
-          <button class="btn btn-success w-100" type="button" disabled>PREMIUM 이용 중</button>
+          <button class="btn btn-outline w-100" type="button" disabled>최초 결제 처리 대기 중</button>
+        <% } else if (premiumActive && !cancelScheduled) { %>
+          <form action="${pageContext.request.contextPath}/business/plans/cancel" method="post">
+            <button class="btn btn-danger w-100" type="submit"
+                    onclick="return confirm('PREMIUM 자동결제를 취소하시겠습니까? 현재 결제 주기 종료일까지 PREMIUM 기능은 유지됩니다.');">자동결제 취소 신청</button>
+          </form>
+        <% } else if (cancelScheduled) { %>
+          <div class="notice" style="margin-bottom:10px;background:#fff8e7;color:#806018;border-color:#f1dda8;text-align:center;">
+            자동결제 취소 신청 완료 · <%= formatDate(premium.getEndDate()) %> 종료 예정
+          </div>
+          <form action="${pageContext.request.contextPath}/business/plans/resume" method="post">
+            <button class="btn btn-primary w-100" type="submit"
+                    onclick="return confirm('자동결제 취소 신청을 철회하고 PREMIUM 자동결제를 계속하시겠습니까?');">자동결제 이어하기</button>
+          </form>
         <% } else { %>
           <button class="btn btn-outline w-100" type="button" disabled>신청 상태 확인 중</button>
         <% } %>
@@ -147,10 +163,10 @@
           </p>
         </div>
         <div>
-          <p><strong>프리미엄 신청 상태</strong><br>
-            <span class="badge <%= statusClass(premium == null ? null : premium.getSubscriptionStatus()) %>"><%= subscriptionLabel(premium == null ? null : premium.getSubscriptionStatus()) %></span>
+          <p><strong>프리미엄 이용 상태</strong><br>
+            <span class="badge <%= statusClass(premium == null ? null : premium.getSubscriptionStatus()) %>"><%= subscriptionLabel(premium == null ? null : premium.getSubscriptionStatus(), cancelScheduled) %></span>
           </p>
-          <p><strong>결제 상태</strong><br>
+          <p><strong>최근 결제 상태</strong><br>
             <span class="badge <%= statusClass(premium == null ? null : premium.getPaymentStatus()) %>"><%= paymentLabel(premium == null ? null : premium.getPaymentStatus()) %></span>
           </p>
         </div>
@@ -159,10 +175,17 @@
       <% if (premium != null) { %>
         <div class="divider"></div>
         <div class="content-grid-2">
-          <p><strong>신청일</strong><br><%= formatDate(premium.getCreatedAt()) %></p>
-          <p><strong>결제번호</strong><br><%= premium.getPaymentNo() == null ? "-" : "P-" + premium.getPaymentNo() %></p>
+          <p><strong>최초 신청일</strong><br><%= formatDate(premium.getCreatedAt()) %></p>
+          <p><strong>최근 결제번호</strong><br><%= premium.getPaymentNo() == null ? "-" : "P-" + premium.getPaymentNo() %></p>
           <p><strong>이용 시작일</strong><br><%= formatDate(premium.getStartDate()) %></p>
-          <p><strong>이용 종료 예정일</strong><br><%= formatDate(premium.getEndDate()) %></p>
+          <% if (premiumActive && !cancelScheduled) { %>
+            <p><strong>다음 자동결제 예정일</strong><br><%= formatDate(premium.getNextBillingDate()) %></p>
+          <% } else if (cancelScheduled) { %>
+            <p><strong>취소 신청일</strong><br><%= formatDate(premium.getUpdatedAt()) %></p>
+            <p><strong>이용 종료 예정일</strong><br><%= formatDate(premium.getEndDate()) %></p>
+          <% } else if (premium.getEndDate() != null) { %>
+            <p><strong>이용 종료일</strong><br><%= formatDate(premium.getEndDate()) %></p>
+          <% } %>
         </div>
       <% } %>
     </section>
@@ -170,7 +193,14 @@
     <% if (!businessApproved) { %>
       <div class="notice" style="margin-top:18px;">관리자 사업자 승인이 완료되어야 프리미엄 이용 신청을 할 수 있습니다.</div>
     <% } else if (premiumPending) { %>
-      <div class="notice" style="margin-top:18px;">MVP에서는 실제 PG 결제 대신 TEST 결제로 신청되며, 관리자가 결제 완료 처리하면 PREMIUM이 즉시 활성화됩니다.</div>
+      <div class="notice" style="margin-top:18px;">MVP에서는 최초 결제를 TEST 방식으로 관리자가 승인합니다. 활성화 이후 월 결제는 같은 TEST 방식으로 자동 생성됩니다.</div>
+    <% } else if (premiumActive && !cancelScheduled) { %>
+      <div class="notice" style="margin-top:18px;">PREMIUM은 매월 자동결제됩니다. 자동결제를 취소하면 즉시 종료되지 않고 현재 결제 주기 종료일까지 PREMIUM 기능을 계속 이용할 수 있습니다.</div>
+    <% } else if (cancelScheduled) { %>
+      <div class="notice" style="margin-top:18px;background:#fff8e7;color:#806018;border-color:#f1dda8;">
+        자동결제 취소 신청이 완료되었습니다. <strong><%= formatDate(premium.getEndDate()) %></strong>까지 PREMIUM 기능이 유지되며 이후 FREE로 전환됩니다.
+        종료 예정일 전에는 위의 <strong>자동결제 이어하기</strong> 버튼으로 취소 신청을 철회할 수 있습니다.
+      </div>
     <% } %>
   </main>
 </div>

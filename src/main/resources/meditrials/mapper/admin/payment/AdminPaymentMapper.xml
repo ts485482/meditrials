@@ -89,7 +89,7 @@
         UPDATE BUSINESS_SUBSCRIPTION
            SET STATUS = 'ACTIVE',
                START_DATE = SYSDATE,
-               END_DATE = ADD_MONTHS(SYSDATE, 1),
+               END_DATE = NULL,
                UPDATED_AT = SYSDATE
          WHERE SUBSCRIPTION_NO = #{subscriptionNo}
            AND STATUS = 'PENDING'

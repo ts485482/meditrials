@@ -21,6 +21,8 @@
         <result property="transactionId" column="TRANSACTION_ID"/>
         <result property="paidAt" column="PAID_AT"/>
         <result property="paymentCreatedAt" column="PAYMENT_CREATED_AT"/>
+        <result property="paidPaymentCount" column="PAID_PAYMENT_COUNT"/>
+        <result property="nextBillingDate" column="NEXT_BILLING_DATE"/>
     </resultMap>
 
     <select id="selectLatestPremiumByMemberNo" resultMap="premiumResultMap">
@@ -42,7 +44,28 @@
                     P.STATUS AS PAYMENT_STATUS,
                     P.TRANSACTION_ID,
                     P.PAID_AT,
-                    P.CREATED_AT AS PAYMENT_CREATED_AT
+                    P.CREATED_AT AS PAYMENT_CREATED_AT,
+                    (
+                        SELECT COUNT(*)
+                          FROM PAYMENT PP
+                         WHERE PP.SUBSCRIPTION_NO = S.SUBSCRIPTION_NO
+                           AND PP.STATUS = 'PAID'
+                    ) AS PAID_PAYMENT_COUNT,
+                    CASE
+                        WHEN S.STATUS = 'ACTIVE'
+                         AND S.START_DATE IS NOT NULL
+                         AND S.END_DATE IS NULL
+                        THEN ADD_MONTHS(
+                                S.START_DATE,
+                                (
+                                    SELECT COUNT(*)
+                                      FROM PAYMENT PP
+                                     WHERE PP.SUBSCRIPTION_NO = S.SUBSCRIPTION_NO
+                                       AND PP.STATUS = 'PAID'
+                                )
+                             )
+                        ELSE NULL
+                    END AS NEXT_BILLING_DATE
                   FROM BUSINESS B
                   JOIN BUSINESS_SUBSCRIPTION S
                     ON S.BUSINESS_NO = B.BUSINESS_NO
@@ -65,7 +88,10 @@
             ON S.BUSINESS_NO = B.BUSINESS_NO
          WHERE B.MEMBER_NO = #{memberNo}
            AND S.PLAN_TYPE = 'PREMIUM'
-           AND S.STATUS IN ('PENDING', 'ACTIVE')
+           AND (
+                S.STATUS = 'PENDING'
+                OR (S.STATUS = 'ACTIVE' AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE))
+           )
     </select>
 
     <insert id="insertPremiumSubscription" parameterType="meditrials.meditrials.business.subscription.vo.BusinessSubscriptionVO">
@@ -116,5 +142,84 @@
             SYSDATE
         )
     </insert>
+
+    <update id="schedulePremiumCancellation">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET END_DATE = #{endDate},
+               UPDATED_AT = SYSDATE
+         WHERE SUBSCRIPTION_NO = #{subscriptionNo}
+           AND STATUS = 'ACTIVE'
+           AND END_DATE IS NULL
+    </update>
+
+    <update id="resumePremiumAutoBilling">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET END_DATE = NULL,
+               UPDATED_AT = SYSDATE
+         WHERE SUBSCRIPTION_NO = #{subscriptionNo}
+           AND STATUS = 'ACTIVE'
+           AND END_DATE IS NOT NULL
+           AND END_DATE &gt; SYSDATE
+    </update>
+
+    <select id="selectActivePremiumForAutoBilling" resultMap="premiumResultMap">
+        SELECT
+            S.SUBSCRIPTION_NO,
+            S.BUSINESS_NO,
+            S.PLAN_TYPE,
+            S.STATUS AS SUBSCRIPTION_STATUS,
+            S.MONTHLY_FEE,
+            S.START_DATE,
+            S.END_DATE,
+            S.CREATED_AT AS SUBSCRIPTION_CREATED_AT,
+            S.UPDATED_AT AS SUBSCRIPTION_UPDATED_AT,
+            (
+                SELECT COUNT(*)
+                  FROM PAYMENT P
+                 WHERE P.SUBSCRIPTION_NO = S.SUBSCRIPTION_NO
+                   AND P.STATUS = 'PAID'
+            ) AS PAID_PAYMENT_COUNT
+          FROM BUSINESS_SUBSCRIPTION S
+         WHERE S.PLAN_TYPE = 'PREMIUM'
+           AND S.STATUS = 'ACTIVE'
+           AND S.START_DATE IS NOT NULL
+           AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+         ORDER BY S.SUBSCRIPTION_NO
+    </select>
+
+    <insert id="insertAutoPaidPayment" parameterType="meditrials.meditrials.business.subscription.vo.BusinessSubscriptionVO">
+        <selectKey keyProperty="paymentNo" resultType="long" order="BEFORE">
+            SELECT SEQ_PAYMENT.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO PAYMENT (
+            PAYMENT_NO,
+            SUBSCRIPTION_NO,
+            AMOUNT,
+            PAYMENT_METHOD,
+            STATUS,
+            TRANSACTION_ID,
+            PAID_AT,
+            CREATED_AT
+        ) VALUES (
+            #{paymentNo},
+            #{subscriptionNo},
+            #{amount},
+            'TEST',
+            'PAID',
+            'AUTO-' || #{subscriptionNo} || '-' || #{paymentNo},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <update id="closeExpiredPremiumSubscriptions">
+        UPDATE BUSINESS_SUBSCRIPTION
+           SET STATUS = 'CANCELED',
+               UPDATED_AT = SYSDATE
+         WHERE PLAN_TYPE = 'PREMIUM'
+           AND STATUS = 'ACTIVE'
+           AND END_DATE IS NOT NULL
+           AND END_DATE &lt;= SYSDATE
+    </update>
 
 </mapper>

@@ -13,4 +13,12 @@ public interface BusinessSubscriptionService {
     boolean isPremiumActive(Long memberNo);
 
     void applyPremium(Long memberNo);
+
+    void requestPremiumCancellation(Long memberNo);
+
+    void resumePremiumAutoBilling(Long memberNo);
+
+    int processAutoRenewals();
+
+    int closeExpiredPremiums();
 }

@@ -1,5 +1,8 @@
 package meditrials.meditrials.business.subscription.dao;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,4 +18,16 @@ public interface BusinessSubscriptionDAO {
     int insertPremiumSubscription(BusinessSubscriptionVO subscription);
 
     int insertPendingPayment(BusinessSubscriptionVO subscription);
+
+    int schedulePremiumCancellation(
+            @Param("subscriptionNo") Long subscriptionNo,
+            @Param("endDate") LocalDateTime endDate);
+
+    int resumePremiumAutoBilling(@Param("subscriptionNo") Long subscriptionNo);
+
+    List<BusinessSubscriptionVO> selectActivePremiumForAutoBilling();
+
+    int insertAutoPaidPayment(BusinessSubscriptionVO subscription);
+
+    int closeExpiredPremiumSubscriptions();
 }

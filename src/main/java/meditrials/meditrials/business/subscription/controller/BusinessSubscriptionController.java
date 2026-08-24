@@ -68,6 +68,49 @@ public class BusinessSubscriptionController {
     }
 
 
+    @PostMapping("/plans/cancel")
+    public String cancelPremium(
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            businessSubscriptionService.requestPremiumCancellation(getLoginMemberNo(session));
+            redirectAttributes.addFlashAttribute(
+                    "pageNotice",
+                    "PREMIUM 자동결제 취소 신청이 완료되었습니다. 현재 결제 주기 종료일까지 PREMIUM 기능을 이용할 수 있습니다.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("pageError", exception.getMessage());
+        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "pageError",
+                    resolveCancelError(exception.getMessage()));
+        }
+
+        return "redirect:/business/plans";
+    }
+
+
+    @PostMapping("/plans/resume")
+    public String resumePremiumAutoBilling(
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            businessSubscriptionService.resumePremiumAutoBilling(getLoginMemberNo(session));
+            redirectAttributes.addFlashAttribute(
+                    "pageNotice",
+                    "자동결제 취소 신청이 철회되었습니다. PREMIUM 자동결제가 계속됩니다.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("pageError", exception.getMessage());
+        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "pageError",
+                    resolveResumeError(exception.getMessage()));
+        }
+
+        return "redirect:/business/plans";
+    }
+
     private String resolveApplyError(String errorCode) {
         if ("BUSINESS_NOT_APPROVED".equals(errorCode)) {
             return "관리자 승인이 완료된 사업자만 프리미엄을 신청할 수 있습니다.";
@@ -76,6 +119,35 @@ public class BusinessSubscriptionController {
             return "이미 처리 중인 프리미엄 신청 또는 활성화된 PREMIUM 이용 내역이 있습니다.";
         }
         return "프리미엄 신청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
+    }
+
+    private String resolveCancelError(String errorCode) {
+        if ("PREMIUM_NOT_ACTIVE".equals(errorCode)) {
+            return "현재 활성화된 PREMIUM 이용 내역이 없습니다.";
+        }
+        if ("PREMIUM_CANCEL_ALREADY_REQUESTED".equals(errorCode)) {
+            return "이미 자동결제 취소 신청이 완료되었습니다.";
+        }
+        if ("BUSINESS_NOT_APPROVED".equals(errorCode)) {
+            return "승인된 사업자만 PREMIUM 이용 상태를 변경할 수 있습니다.";
+        }
+        return "PREMIUM 자동결제 취소 신청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
+    }
+
+    private String resolveResumeError(String errorCode) {
+        if ("PREMIUM_NOT_ACTIVE".equals(errorCode)) {
+            return "현재 활성화된 PREMIUM 이용 내역이 없습니다.";
+        }
+        if ("PREMIUM_CANCEL_NOT_REQUESTED".equals(errorCode)) {
+            return "현재 자동결제 취소 신청 상태가 아닙니다.";
+        }
+        if ("PREMIUM_CANCEL_PERIOD_ENDED".equals(errorCode)) {
+            return "이미 PREMIUM 이용 종료 예정일이 지나 자동결제를 이어할 수 없습니다. 새로 PREMIUM을 신청해주세요.";
+        }
+        if ("BUSINESS_NOT_APPROVED".equals(errorCode)) {
+            return "승인된 사업자만 PREMIUM 이용 상태를 변경할 수 있습니다.";
+        }
+        return "PREMIUM 자동결제 이어하기를 처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
     }
 
     private Long getLoginMemberNo(HttpSession session) {

@@ -1,5 +1,8 @@
 package meditrials.meditrials.business.subscription.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +18,7 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
     private static final String BUSINESS_APPROVED = "APPROVED";
     private static final String PLAN_PREMIUM = "PREMIUM";
     private static final String SUBSCRIPTION_PENDING = "PENDING";
+    private static final String SUBSCRIPTION_ACTIVE = "ACTIVE";
     private static final String PAYMENT_PENDING = "PENDING";
     private static final String PAYMENT_METHOD_TEST = "TEST";
 
@@ -58,13 +62,19 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
     @Override
     public boolean isPremiumActive(Long memberNo) {
         BusinessSubscriptionVO premium = getLatestPremium(memberNo);
-        return premium != null && "ACTIVE".equals(premium.getSubscriptionStatus());
+        if (premium == null || !SUBSCRIPTION_ACTIVE.equals(premium.getSubscriptionStatus())) {
+            return false;
+        }
+
+        LocalDateTime endDate = premium.getEndDate();
+        return endDate == null || endDate.isAfter(LocalDateTime.now());
     }
 
     @Override
     @Transactional
     public void applyPremium(Long memberNo) {
         BusinessVO business = requireApprovedBusiness(memberNo);
+        businessSubscriptionDAO.closeExpiredPremiumSubscriptions();
         if (businessSubscriptionDAO.countOpenPremiumByMemberNo(memberNo) > 0) {
             throw new IllegalStateException("PREMIUM_ALREADY_OPEN");
         }
@@ -87,6 +97,122 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
         if (insertedPayment != 1) {
             throw new IllegalStateException("PREMIUM_PAYMENT_INSERT_FAILED");
         }
+    }
+
+    @Override
+    @Transactional
+    public void requestPremiumCancellation(Long memberNo) {
+        requireApprovedBusiness(memberNo);
+
+        BusinessSubscriptionVO premium = getLatestPremium(memberNo);
+        if (premium == null || !SUBSCRIPTION_ACTIVE.equals(premium.getSubscriptionStatus())) {
+            throw new IllegalStateException("PREMIUM_NOT_ACTIVE");
+        }
+        if (premium.getEndDate() != null) {
+            throw new IllegalStateException("PREMIUM_CANCEL_ALREADY_REQUESTED");
+        }
+
+        LocalDateTime endDate = premium.getNextBillingDate();
+        if (endDate == null) {
+            endDate = calculateNextBillingDate(premium);
+        }
+        if (endDate == null) {
+            throw new IllegalStateException("PREMIUM_END_DATE_CALCULATION_FAILED");
+        }
+
+        int updatedRows = businessSubscriptionDAO.schedulePremiumCancellation(
+                premium.getSubscriptionNo(), endDate);
+        if (updatedRows != 1) {
+            throw new IllegalStateException("PREMIUM_CANCEL_UPDATE_FAILED");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resumePremiumAutoBilling(Long memberNo) {
+        requireApprovedBusiness(memberNo);
+
+        BusinessSubscriptionVO premium = getLatestPremium(memberNo);
+        if (premium == null || !SUBSCRIPTION_ACTIVE.equals(premium.getSubscriptionStatus())) {
+            throw new IllegalStateException("PREMIUM_NOT_ACTIVE");
+        }
+        if (premium.getEndDate() == null) {
+            throw new IllegalStateException("PREMIUM_CANCEL_NOT_REQUESTED");
+        }
+        if (!premium.getEndDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("PREMIUM_CANCEL_PERIOD_ENDED");
+        }
+
+        int updatedRows = businessSubscriptionDAO.resumePremiumAutoBilling(
+                premium.getSubscriptionNo());
+        if (updatedRows != 1) {
+            throw new IllegalStateException("PREMIUM_RESUME_UPDATE_FAILED");
+        }
+    }
+
+    @Override
+    @Transactional
+    public int processAutoRenewals() {
+        LocalDateTime now = LocalDateTime.now();
+        List<BusinessSubscriptionVO> subscriptions = businessSubscriptionDAO.selectActivePremiumForAutoBilling();
+        int paymentCount = 0;
+
+        for (BusinessSubscriptionVO subscription : subscriptions) {
+            if (subscription.getStartDate() == null) {
+                continue;
+            }
+
+            int paidCount = subscription.getPaidPaymentCount() == null
+                    ? 0
+                    : subscription.getPaidPaymentCount();
+            LocalDateTime dueDate = subscription.getStartDate().plusMonths(paidCount);
+
+            while (!dueDate.toLocalDate().isAfter(now.toLocalDate())) {
+                LocalDateTime endDate = subscription.getEndDate();
+                if (endDate != null && !dueDate.isBefore(endDate)) {
+                    break;
+                }
+
+                subscription.setAmount(subscription.getMonthlyFee() == null
+                        ? PREMIUM_MONTHLY_FEE
+                        : subscription.getMonthlyFee());
+
+                int insertedRows = businessSubscriptionDAO.insertAutoPaidPayment(subscription);
+                if (insertedRows != 1) {
+                    throw new IllegalStateException("PREMIUM_AUTO_PAYMENT_INSERT_FAILED");
+                }
+
+                paymentCount++;
+                paidCount++;
+                dueDate = subscription.getStartDate().plusMonths(paidCount);
+            }
+        }
+
+        return paymentCount;
+    }
+
+    @Override
+    @Transactional
+    public int closeExpiredPremiums() {
+        return businessSubscriptionDAO.closeExpiredPremiumSubscriptions();
+    }
+
+    private LocalDateTime calculateNextBillingDate(BusinessSubscriptionVO premium) {
+        if (premium.getStartDate() == null) {
+            return null;
+        }
+
+        int paidCount = premium.getPaidPaymentCount() == null
+                ? 0
+                : premium.getPaidPaymentCount();
+        LocalDateTime nextBillingDate = premium.getStartDate().plusMonths(paidCount);
+        LocalDateTime now = LocalDateTime.now();
+
+        while (!nextBillingDate.isAfter(now)) {
+            paidCount++;
+            nextBillingDate = premium.getStartDate().plusMonths(paidCount);
+        }
+        return nextBillingDate;
     }
 
     private BusinessVO requireApprovedBusiness(Long memberNo) {

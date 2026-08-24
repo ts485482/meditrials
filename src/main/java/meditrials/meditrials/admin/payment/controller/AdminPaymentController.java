@@ -53,7 +53,7 @@ public class AdminPaymentController {
             adminPaymentService.completePayment(getLoginMemberNo(session), paymentNo);
             redirectAttributes.addFlashAttribute(
                     "pageNotice",
-                    "결제 완료 처리와 PREMIUM 활성화가 완료되었습니다.");
+                    "최초 결제 완료 처리와 PREMIUM 활성화가 완료되었습니다. 이후 월 결제는 자동 처리됩니다.");
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("pageError", exception.getMessage());
         } catch (IllegalStateException exception) {

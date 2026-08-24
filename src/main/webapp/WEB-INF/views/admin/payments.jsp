@@ -68,7 +68,7 @@
     <div class="dashboard-head">
       <div>
         <h1>결제 관리</h1>
-        <p class="text-muted" style="margin:8px 0 0;">사업자의 PREMIUM 신청 결제를 처리하고 프리미엄 이용 상태를 활성화합니다.</p>
+        <p class="text-muted" style="margin:8px 0 0;">PREMIUM 최초 신청 결제를 승인하고, 활성화 이후 생성되는 월 자동결제 내역을 확인합니다.</p>
       </div>
     </div>
 
@@ -138,7 +138,7 @@
           <p><strong>신청일</strong><br><%= formatDate(selectedPayment.getCreatedAt()) %></p>
           <p><strong>결제 완료일</strong><br><%= formatDate(selectedPayment.getPaidAt()) %></p>
           <p><strong>PREMIUM 시작일</strong><br><%= formatDate(selectedPayment.getSubscriptionStartDate()) %></p>
-          <p><strong>PREMIUM 종료 예정일</strong><br><%= formatDate(selectedPayment.getSubscriptionEndDate()) %></p>
+          <p><strong>자동결제 종료 예정일</strong><br><%= formatDate(selectedPayment.getSubscriptionEndDate()) %></p>
         </div>
 
         <% if (selectedPayment.getTransactionId() != null && !selectedPayment.getTransactionId().isBlank()) { %>
@@ -166,7 +166,7 @@
       </section>
     <% } %>
 
-    <div class="notice" style="margin-top:18px;">MVP 단계에서는 실제 PG 결제 대신 PAYMENT_METHOD='TEST'로 신청하고, 관리자의 결제 완료 처리로 PREMIUM을 활성화합니다.</div>
+    <div class="notice" style="margin-top:18px;">MVP 단계에서는 최초 결제와 월 자동결제를 PAYMENT_METHOD='TEST'로 기록합니다. 관리자는 최초 결제만 승인하며 이후 결제는 매월 자동 생성됩니다.</div>
   </main>
 </div>
 </body>
