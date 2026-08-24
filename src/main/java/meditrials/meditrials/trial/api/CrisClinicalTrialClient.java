@@ -21,6 +21,7 @@ import meditrials.meditrials.trial.vo.TrialVO;
 public class CrisClinicalTrialClient {
 
     private static final int SEARCH_FETCH_SIZE = 50;
+    private static final int DEFAULT_SEARCH_PAGE_COUNT = 3;
     private static final Duration CACHE_DURATION = Duration.ofMinutes(30);
 
     private final RestClient restClient;
@@ -55,29 +56,29 @@ public class CrisClinicalTrialClient {
         }
 
         try {
-            Map<?, ?> raw = restClient.get()
-                    .uri(uriBuilder -> {
-                        var builder = uriBuilder
-                                .path("/list")
-                                .queryParam("serviceKey", serviceKey)
-                                .queryParam("resultType", "JSON")
-                                .queryParam("numOfRows", SEARCH_FETCH_SIZE)
-                                .queryParam("pageNo", 1);
-                        if (!normalizedKeyword.isBlank()) {
-                            builder.queryParam("srchWord", normalizedKeyword);
-                        }
-                        return builder.build();
-                    })
-                    .retrieve()
-                    .body(Map.class);
-
-            validateResponse(raw);
+            Map<?, ?> firstPage = fetchPage(normalizedKeyword, 1);
+            validateResponse(firstPage);
 
             // CRIS JSON은 응답 시점/게이트웨이에 따라 body 내부 구조 또는
             // resultCode/totalCount/item이 최상위에 위치하는 평면 구조로 내려올 수 있다.
             // 특정 body 구조를 가정하지 않고 응답 전체에서 값을 찾는다.
-            Integer totalCount = readInteger(findValue(raw, "totalCount"));
-            List<TrialVO> trials = parseItems(raw);
+            Integer totalCount = readInteger(findValue(firstPage, "totalCount"));
+            List<TrialVO> trials = new ArrayList<>(parseItems(firstPage));
+
+            // 검색어가 없는 기본 화면에서는 최신 50건만 보면 교육·관찰 성격의 연구가
+            // 앞에 몰릴 수 있다. 최대 3페이지(150건)까지 확보한 뒤 서비스에서
+            // 치료·중재 연구를 우선 정렬한다. 검색어가 있으면 정확도와 호출량을 위해 1페이지만 사용한다.
+            if (normalizedKeyword.isBlank()) {
+                int availablePages = totalCount == null
+                        ? DEFAULT_SEARCH_PAGE_COUNT
+                        : Math.max(1, (totalCount + SEARCH_FETCH_SIZE - 1) / SEARCH_FETCH_SIZE);
+                int pageCount = Math.min(DEFAULT_SEARCH_PAGE_COUNT, availablePages);
+                for (int pageNo = 2; pageNo <= pageCount; pageNo++) {
+                    Map<?, ?> page = fetchPage(normalizedKeyword, pageNo);
+                    validateResponse(page);
+                    trials.addAll(parseItems(page));
+                }
+            }
 
             CrisSearchResult result = new CrisSearchResult(trials, totalCount);
             cache.put(cacheKey, new CacheEntry(result, Instant.now()));
@@ -93,6 +94,24 @@ public class CrisClinicalTrialClient {
                     "CRIS 임상연구 응답을 해석하지 못했습니다.",
                     exception);
         }
+    }
+
+    private Map<?, ?> fetchPage(String keyword, int pageNo) {
+        return restClient.get()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder
+                            .path("/list")
+                            .queryParam("serviceKey", serviceKey)
+                            .queryParam("resultType", "JSON")
+                            .queryParam("numOfRows", SEARCH_FETCH_SIZE)
+                            .queryParam("pageNo", pageNo);
+                    if (keyword != null && !keyword.isBlank()) {
+                        builder.queryParam("srchWord", keyword);
+                    }
+                    return builder.build();
+                })
+                .retrieve()
+                .body(Map.class);
     }
 
     private void validateResponse(Map<?, ?> raw) {
@@ -310,9 +329,6 @@ public class CrisClinicalTrialClient {
         return null;
     }
 
-    private Map<?, ?> asMap(Object value) {
-        return value instanceof Map<?, ?> map ? map : Map.of();
-    }
 
     private String readString(Object value) {
         return value == null ? null : String.valueOf(value).trim();

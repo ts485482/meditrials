@@ -106,7 +106,8 @@ public class TrialServiceImpl implements TrialService {
             String phase) {
 
         TrialSearchResultVO result = new TrialSearchResultVO();
-        List<TrialVO> combined = new ArrayList<>();
+        List<TrialVO> crisTrials = new ArrayList<>();
+        List<TrialVO> clinicalTrials = new ArrayList<>();
         String crisError = null;
         String clinicalError = null;
 
@@ -114,7 +115,7 @@ public class TrialServiceImpl implements TrialService {
             CrisSearchResult crisResult = crisClinicalTrialClient.searchStudies(keyword);
             result.setCrisTotalCount(crisResult.totalCount());
             result.setCrisAvailable(true);
-            combined.addAll(filterTrials(crisResult.studies(), recruitmentStatus, phase));
+            crisTrials.addAll(filterTrials(crisResult.studies(), recruitmentStatus, phase));
         } catch (CrisClinicalTrialException exception) {
             result.setCrisAvailable(false);
             crisError = exception.getMessage();
@@ -127,12 +128,13 @@ public class TrialServiceImpl implements TrialService {
                     recruitmentStatus,
                     KOREA_LOCATION_QUERY);
             result.setClinicalTrialsTotalCount(clinicalResult.totalCount());
-            combined.addAll(filterTrials(clinicalResult.studies(), recruitmentStatus, phase));
+            clinicalTrials.addAll(filterTrials(clinicalResult.studies(), recruitmentStatus, phase));
         } catch (ClinicalTrialsGovException exception) {
             clinicalError = exception.getMessage();
         }
 
-        List<TrialVO> deduplicated = deduplicate(combined);
+        List<TrialVO> prioritized = prioritizeDomesticTrials(crisTrials, clinicalTrials);
+        List<TrialVO> deduplicated = deduplicate(prioritized);
         List<TrialVO> displayed = persistAndLimit(deduplicated);
 
         if (displayed.isEmpty() && crisError != null && clinicalError != null) {
@@ -185,8 +187,8 @@ public class TrialServiceImpl implements TrialService {
 
     private String buildDomesticNotice(String crisError, String clinicalError) {
         if (crisError == null && clinicalError == null) {
-            return "국내 임상시험은 질병관리청 CRIS의 한글 등록 연구를 먼저 표시하고, "
-                    + "ClinicalTrials.gov의 대한민국 수행 연구를 함께 보강합니다.";
+            return "국내 임상시험은 질병관리청 CRIS의 한글 중재연구 중 의약품·의료기기·치료 관련 연구를 우선 표시하고, "
+                    + "ClinicalTrials.gov의 대한민국 수행 연구를 함께 보강합니다. 교육·만족도 등 일반 중재연구는 뒤로 배치합니다.";
         }
         if (crisError != null && clinicalError == null) {
             return crisError + " 대신 ClinicalTrials.gov에서 대한민국 수행 연구를 표시합니다.";
@@ -228,6 +230,100 @@ public class TrialServiceImpl implements TrialService {
                 && (location.toLowerCase(Locale.ROOT).contains("south korea")
                         || location.contains("대한민국")
                         || location.contains("한국"));
+    }
+
+    private List<TrialVO> prioritizeDomesticTrials(
+            List<TrialVO> crisTrials,
+            List<TrialVO> clinicalTrials) {
+        List<TrialVO> focusedCris = new ArrayList<>();
+        List<TrialVO> otherCris = new ArrayList<>();
+
+        for (TrialVO trial : crisTrials) {
+            if (treatmentPriorityScore(trial) >= 70) {
+                focusedCris.add(trial);
+            } else {
+                otherCris.add(trial);
+            }
+        }
+
+        focusedCris.sort((left, right) -> Integer.compare(
+                treatmentPriorityScore(right),
+                treatmentPriorityScore(left)));
+        otherCris.sort((left, right) -> Integer.compare(
+                treatmentPriorityScore(right),
+                treatmentPriorityScore(left)));
+
+        List<TrialVO> prioritized = new ArrayList<>();
+
+        // 국내 한글 CRIS 연구를 우선하되, ClinicalTrials.gov 한국 수행 연구도
+        // 최대 20건 화면 안에 일부 포함될 수 있도록 CRIS 우선 영역을 16건으로 둔다.
+        int crisFrontLimit = Math.min(16, focusedCris.size());
+        prioritized.addAll(focusedCris.subList(0, crisFrontLimit));
+        prioritized.addAll(clinicalTrials);
+        if (focusedCris.size() > crisFrontLimit) {
+            prioritized.addAll(focusedCris.subList(crisFrontLimit, focusedCris.size()));
+        }
+        prioritized.addAll(otherCris);
+        return prioritized;
+    }
+
+    private int treatmentPriorityScore(TrialVO trial) {
+        if (trial == null || !isCrisId(trial.getNctId())) {
+            return 0;
+        }
+
+        int score = 0;
+        String meta = normalizeForPriority(trial.getConditionsText());
+        String title = normalizeForPriority(trial.getTitle() + " " + trial.getOfficialTitle());
+        String phase = normalizeForPriority(trial.getPhase());
+
+        if ("INTERVENTIONAL".equalsIgnoreCase(trial.getStudyType())) {
+            score += 15;
+        }
+        if (!phase.isBlank() && !phase.contains("NA") && phase.contains("PHASE")) {
+            score += 70;
+        }
+
+        if (containsAny(meta, "의약품", "약물", "생물학적", "백신", "세포치료", "유전자치료")) {
+            score += 100;
+        } else if (containsAny(meta, "의료기구", "의료기기")) {
+            score += 80;
+        } else if (containsAny(meta, "수술", "시술", "치료", "재활")) {
+            score += 60;
+        } else if (containsAny(meta, "행동요법", "운동")) {
+            score += 25;
+        }
+
+        if (containsAny(
+                title,
+                "치료", "임상시험", "안전성", "유효성", "투여", "항암", "약물", "약제",
+                "제제", "백신", "세포", "유전자", "수술", "시술", "환자", "암", "질환")) {
+            score += 35;
+        }
+
+        if (containsAny(
+                title,
+                "교육프로그램", "교육 프로그램", "교육", "지식", "역량", "인식", "만족도",
+                "설문", "챗봇", "학생", "간호사")) {
+            score -= 70;
+        }
+        return score;
+    }
+
+    private String normalizeForPriority(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (keyword != null && !keyword.isBlank() && text.contains(keyword.toLowerCase(Locale.ROOT))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<TrialVO> deduplicate(List<TrialVO> trials) {
@@ -325,6 +421,9 @@ public class TrialServiceImpl implements TrialService {
 
     private boolean isInterventional(TrialVO trial) {
         String studyType = trial.getStudyType();
+        if (isCrisId(trial.getNctId())) {
+            return "INTERVENTIONAL".equalsIgnoreCase(studyType);
+        }
         return studyType == null
                 || studyType.isBlank()
                 || "INTERVENTIONAL".equalsIgnoreCase(studyType);
