@@ -53,24 +53,4 @@ public class PageController {
     }
 
 
-
-
-    @GetMapping("/admin")
-    public String adminDashboard() {
-        return "admin/dashboard";
-    }
-
-
-
-    @GetMapping("/admin/plans")
-    public String adminPlans() {
-        return "admin/plans";
-    }
-
-
-
-    @GetMapping("/admin/revenue")
-    public String adminRevenue() {
-        return "admin/revenue";
-    }
 }

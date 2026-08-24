@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.dashboard.dao.AdminDashboardDAO">
+
+    <resultMap id="adminDashboardResultMap" type="meditrials.meditrials.admin.dashboard.vo.AdminDashboardVO">
+        <result property="userCount" column="USER_COUNT"/>
+        <result property="businessCount" column="BUSINESS_COUNT"/>
+        <result property="trialCount" column="TRIAL_COUNT"/>
+        <result property="inquiryCount" column="INQUIRY_COUNT"/>
+        <result property="premiumBusinessCount" column="PREMIUM_BUSINESS_COUNT"/>
+        <result property="monthRevenue" column="MONTH_REVENUE"/>
+        <result property="pendingBusinessCount" column="PENDING_BUSINESS_COUNT"/>
+        <result property="approvedBusinessMonthCount" column="APPROVED_BUSINESS_MONTH_COUNT"/>
+        <result property="pendingTrialCount" column="PENDING_TRIAL_COUNT"/>
+        <result property="rejectedTrialMonthCount" column="REJECTED_TRIAL_MONTH_COUNT"/>
+    </resultMap>
+
+    <resultMap id="recentReviewResultMap" type="meditrials.meditrials.admin.dashboard.vo.AdminRecentReviewVO">
+        <id property="reviewLogNo" column="REVIEW_LOG_NO"/>
+        <result property="createdAtText" column="CREATED_AT_TEXT"/>
+        <result property="targetType" column="TARGET_TYPE"/>
+        <result property="targetNo" column="TARGET_NO"/>
+        <result property="targetName" column="TARGET_NAME"/>
+        <result property="actionType" column="ACTION_TYPE"/>
+        <result property="adminName" column="ADMIN_NAME"/>
+    </resultMap>
+
+    <select id="selectDashboardSummary" resultMap="adminDashboardResultMap">
+        SELECT
+            (SELECT COUNT(*)
+               FROM MEMBER
+              WHERE ROLE_CODE = 'USER'
+                AND STATUS = 'ACTIVE') AS USER_COUNT,
+
+            (SELECT COUNT(*)
+               FROM BUSINESS
+              WHERE APPROVAL_STATUS = 'APPROVED') AS BUSINESS_COUNT,
+
+            (SELECT COUNT(*)
+               FROM CLINICAL_TRIAL
+              WHERE REVIEW_STATUS = 'APPROVED') AS TRIAL_COUNT,
+
+            (SELECT COUNT(*)
+               FROM TRIAL_INQUIRY) AS INQUIRY_COUNT,
+
+            (SELECT COUNT(*)
+               FROM BUSINESS_SUBSCRIPTION
+              WHERE PLAN_TYPE = 'PREMIUM'
+                AND STATUS = 'ACTIVE'
+                AND (END_DATE IS NULL OR END_DATE &gt; SYSDATE)) AS PREMIUM_BUSINESS_COUNT,
+
+            (SELECT NVL(SUM(AMOUNT), 0)
+               FROM PAYMENT
+              WHERE STATUS = 'PAID'
+                AND PAID_AT &gt;= TRUNC(SYSDATE, 'MM')
+                AND PAID_AT &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)) AS MONTH_REVENUE,
+
+            (SELECT COUNT(*)
+               FROM BUSINESS
+              WHERE APPROVAL_STATUS = 'PENDING') AS PENDING_BUSINESS_COUNT,
+
+            (SELECT COUNT(*)
+               FROM BUSINESS
+              WHERE APPROVAL_STATUS = 'APPROVED'
+                AND APPROVED_AT &gt;= TRUNC(SYSDATE, 'MM')
+                AND APPROVED_AT &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)) AS APPROVED_BUSINESS_MONTH_COUNT,
+
+            (SELECT COUNT(*)
+               FROM CLINICAL_TRIAL
+              WHERE SOURCE_TYPE = 'BUSINESS'
+                AND REVIEW_STATUS = 'PENDING') AS PENDING_TRIAL_COUNT,
+
+            (SELECT COUNT(*)
+               FROM CLINICAL_TRIAL
+              WHERE SOURCE_TYPE = 'BUSINESS'
+                AND REVIEW_STATUS = 'REJECTED'
+                AND UPDATED_AT &gt;= TRUNC(SYSDATE, 'MM')
+                AND UPDATED_AT &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)) AS REJECTED_TRIAL_MONTH_COUNT
+        FROM DUAL
+    </select>
+
+    <select id="selectRecentReviews" resultMap="recentReviewResultMap">
+        SELECT *
+          FROM (
+                SELECT
+                    L.REVIEW_LOG_NO,
+                    TO_CHAR(L.CREATED_AT, 'YYYY.MM.DD HH24:MI') AS CREATED_AT_TEXT,
+                    L.TARGET_TYPE,
+                    L.TARGET_NO,
+                    CASE L.TARGET_TYPE
+                        WHEN 'BUSINESS' THEN (
+                            SELECT B.ORG_NAME
+                              FROM BUSINESS B
+                             WHERE B.BUSINESS_NO = L.TARGET_NO
+                        )
+                        WHEN 'TRIAL' THEN (
+                            SELECT T.TITLE
+                              FROM CLINICAL_TRIAL T
+                             WHERE T.TRIAL_NO = L.TARGET_NO
+                        )
+                        WHEN 'PROMOTION' THEN (
+                            SELECT T.TITLE
+                              FROM TRIAL_PROMOTION P
+                              JOIN CLINICAL_TRIAL T
+                                ON T.TRIAL_NO = P.TRIAL_NO
+                             WHERE P.PROMOTION_NO = L.TARGET_NO
+                        )
+                        WHEN 'SUBSCRIPTION' THEN (
+                            SELECT B.ORG_NAME
+                              FROM BUSINESS_SUBSCRIPTION S
+                              JOIN BUSINESS B
+                                ON B.BUSINESS_NO = S.BUSINESS_NO
+                             WHERE S.SUBSCRIPTION_NO = L.TARGET_NO
+                        )
+                        ELSE NULL
+                    END AS TARGET_NAME,
+                    L.ACTION_TYPE,
+                    M.MEMBER_NAME AS ADMIN_NAME
+                FROM ADMIN_REVIEW_LOG L
+                JOIN MEMBER M
+                  ON M.MEMBER_NO = L.ADMIN_MEMBER_NO
+               ORDER BY L.CREATED_AT DESC, L.REVIEW_LOG_NO DESC
+          )
+         WHERE ROWNUM &lt;= 5
+    </select>
+
+</mapper>

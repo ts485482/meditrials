@@ -186,6 +186,7 @@
         <div class="divider"></div>
         <div class="content-grid-2">
           <p><strong>최초 신청일</strong><br><%= formatDate(premium.getCreatedAt()) %></p>
+          <p><strong>내 구독 월 결제금액</strong><br>₩<%= money(premium.getMonthlyFee()) %></p>
           <p><strong>최근 결제번호</strong><br><%= premium.getPaymentNo() == null ? "-" : "P-" + premium.getPaymentNo() %></p>
           <p><strong>이용 시작일</strong><br><%= formatDate(premium.getStartDate()) %></p>
           <% if (premiumActive && !cancelScheduled) { %>

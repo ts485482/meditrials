@@ -10,11 +10,11 @@ import meditrials.meditrials.business.service.BusinessService;
 import meditrials.meditrials.business.subscription.dao.BusinessSubscriptionDAO;
 import meditrials.meditrials.business.subscription.vo.BusinessSubscriptionVO;
 import meditrials.meditrials.business.vo.BusinessVO;
+import meditrials.meditrials.plan.service.PlanPolicyService;
 
 @Service
 public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionService {
 
-    private static final long PREMIUM_MONTHLY_FEE = 99_000L;
     private static final String BUSINESS_APPROVED = "APPROVED";
     private static final String PLAN_PREMIUM = "PREMIUM";
     private static final String SUBSCRIPTION_PENDING = "PENDING";
@@ -24,17 +24,20 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
 
     private final BusinessSubscriptionDAO businessSubscriptionDAO;
     private final BusinessService businessService;
+    private final PlanPolicyService planPolicyService;
 
     public BusinessSubscriptionServiceImpl(
             BusinessSubscriptionDAO businessSubscriptionDAO,
-            BusinessService businessService) {
+            BusinessService businessService,
+            PlanPolicyService planPolicyService) {
         this.businessSubscriptionDAO = businessSubscriptionDAO;
         this.businessService = businessService;
+        this.planPolicyService = planPolicyService;
     }
 
     @Override
     public long getPremiumMonthlyFee() {
-        return PREMIUM_MONTHLY_FEE;
+        return planPolicyService.getPremiumMonthlyFee();
     }
 
     @Override
@@ -79,12 +82,14 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
             throw new IllegalStateException("PREMIUM_ALREADY_OPEN");
         }
 
+        long premiumMonthlyFee = planPolicyService.getPremiumMonthlyFee();
+
         BusinessSubscriptionVO subscription = new BusinessSubscriptionVO();
         subscription.setBusinessNo(business.getBusinessNo());
         subscription.setPlanType(PLAN_PREMIUM);
         subscription.setSubscriptionStatus(SUBSCRIPTION_PENDING);
-        subscription.setMonthlyFee(PREMIUM_MONTHLY_FEE);
-        subscription.setAmount(PREMIUM_MONTHLY_FEE);
+        subscription.setMonthlyFee(premiumMonthlyFee);
+        subscription.setAmount(premiumMonthlyFee);
         subscription.setPaymentMethod(PAYMENT_METHOD_TEST);
         subscription.setPaymentStatus(PAYMENT_PENDING);
 
@@ -174,7 +179,7 @@ public class BusinessSubscriptionServiceImpl implements BusinessSubscriptionServ
                 }
 
                 subscription.setAmount(subscription.getMonthlyFee() == null
-                        ? PREMIUM_MONTHLY_FEE
+                        ? planPolicyService.getPremiumMonthlyFee()
                         : subscription.getMonthlyFee());
 
                 int insertedRows = businessSubscriptionDAO.insertAutoPaidPayment(subscription);

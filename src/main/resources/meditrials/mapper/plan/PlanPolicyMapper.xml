@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.plan.dao.PlanPolicyDAO">
+
+    <resultMap id="planPolicyResultMap" type="meditrials.meditrials.plan.vo.PlanPolicyVO">
+        <id property="planType" column="PLAN_TYPE"/>
+        <result property="monthlyFee" column="MONTHLY_FEE"/>
+        <result property="activeYn" column="ACTIVE_YN"/>
+        <result property="updatedBy" column="UPDATED_BY"/>
+        <result property="updatedByName" column="UPDATED_BY_NAME"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <select id="selectPlanPolicy" resultMap="planPolicyResultMap">
+        SELECT
+            P.PLAN_TYPE,
+            P.MONTHLY_FEE,
+            P.ACTIVE_YN,
+            P.UPDATED_BY,
+            M.MEMBER_NAME AS UPDATED_BY_NAME,
+            P.CREATED_AT,
+            P.UPDATED_AT
+          FROM PLAN_POLICY P
+          LEFT JOIN MEMBER M
+            ON M.MEMBER_NO = P.UPDATED_BY
+         WHERE P.PLAN_TYPE = #{planType}
+    </select>
+
+    <update id="updatePremiumMonthlyFee">
+        UPDATE PLAN_POLICY
+           SET MONTHLY_FEE = #{monthlyFee},
+               UPDATED_BY = #{updatedBy},
+               UPDATED_AT = SYSDATE
+         WHERE PLAN_TYPE = 'PREMIUM'
+           AND ACTIVE_YN = 'Y'
+    </update>
+
+</mapper>

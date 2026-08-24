@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.admin.revenue.dao.AdminRevenueDAO">
+
+    <resultMap id="revenueSummaryResultMap" type="meditrials.meditrials.admin.revenue.vo.AdminRevenueSummaryVO">
+        <result property="currentMonthRevenue" column="CURRENT_MONTH_REVENUE"/>
+        <result property="previousMonthRevenue" column="PREVIOUS_MONTH_REVENUE"/>
+        <result property="currentMonthPaymentCount" column="CURRENT_MONTH_PAYMENT_COUNT"/>
+        <result property="activePremiumCount" column="ACTIVE_PREMIUM_COUNT"/>
+        <result property="totalPaidRevenue" column="TOTAL_PAID_REVENUE"/>
+    </resultMap>
+
+    <resultMap id="monthlyRevenueResultMap" type="meditrials.meditrials.admin.revenue.vo.AdminMonthlyRevenueVO">
+        <result property="monthLabel" column="MONTH_LABEL"/>
+        <result property="paymentCount" column="PAYMENT_COUNT"/>
+        <result property="premiumRevenue" column="PREMIUM_REVENUE"/>
+    </resultMap>
+
+    <select id="selectRevenueSummary" resultMap="revenueSummaryResultMap">
+        SELECT
+            (SELECT NVL(SUM(P.AMOUNT), 0)
+               FROM PAYMENT P
+              WHERE P.STATUS = 'PAID'
+                AND P.PAID_AT &gt;= TRUNC(SYSDATE, 'MM')
+                AND P.PAID_AT &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+            ) AS CURRENT_MONTH_REVENUE,
+
+            (SELECT NVL(SUM(P.AMOUNT), 0)
+               FROM PAYMENT P
+              WHERE P.STATUS = 'PAID'
+                AND P.PAID_AT &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+                AND P.PAID_AT &lt; TRUNC(SYSDATE, 'MM')
+            ) AS PREVIOUS_MONTH_REVENUE,
+
+            (SELECT COUNT(*)
+               FROM PAYMENT P
+              WHERE P.STATUS = 'PAID'
+                AND P.PAID_AT &gt;= TRUNC(SYSDATE, 'MM')
+                AND P.PAID_AT &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+            ) AS CURRENT_MONTH_PAYMENT_COUNT,
+
+            (SELECT COUNT(*)
+               FROM BUSINESS_SUBSCRIPTION S
+              WHERE S.PLAN_TYPE = 'PREMIUM'
+                AND S.STATUS = 'ACTIVE'
+                AND (S.END_DATE IS NULL OR S.END_DATE &gt; SYSDATE)
+            ) AS ACTIVE_PREMIUM_COUNT,
+
+            (SELECT NVL(SUM(P.AMOUNT), 0)
+               FROM PAYMENT P
+              WHERE P.STATUS = 'PAID'
+            ) AS TOTAL_PAID_REVENUE
+        FROM DUAL
+    </select>
+
+    <select id="selectMonthlyRevenueList" resultMap="monthlyRevenueResultMap">
+        WITH MONTHS AS (
+            SELECT ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -(LEVEL - 1)) AS MONTH_START
+              FROM DUAL
+            CONNECT BY LEVEL &lt;= 6
+        )
+        SELECT
+            TO_CHAR(M.MONTH_START, 'YYYY.MM') AS MONTH_LABEL,
+            COUNT(P.PAYMENT_NO) AS PAYMENT_COUNT,
+            NVL(SUM(P.AMOUNT), 0) AS PREMIUM_REVENUE
+          FROM MONTHS M
+          LEFT JOIN PAYMENT P
+            ON P.STATUS = 'PAID'
+           AND P.PAID_AT &gt;= M.MONTH_START
+           AND P.PAID_AT &lt; ADD_MONTHS(M.MONTH_START, 1)
+         GROUP BY M.MONTH_START
+         ORDER BY M.MONTH_START ASC
+    </select>
+
+</mapper>

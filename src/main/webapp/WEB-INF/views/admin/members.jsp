@@ -137,9 +137,8 @@
               <td><span class="badge <%= statusClass(member.getStatus()) %>"><%= statusLabel(member.getStatus()) %></span></td>
               <td>
                 <a class="btn btn-sm btn-outline" href="${pageContext.request.contextPath}/admin/members?memberNo=<%= member.getMemberNo() %><%= keyword.isBlank() ? "" : "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8) %>">상세</a>
-                <% if (currentAdminMemberNo != null && currentAdminMemberNo.equals(member.getMemberNo())) { %>
-                  <span class="text-muted" style="margin-left:8px;font-size:13px;">현재 로그인 계정</span>
-                <% } else if ("ADMIN".equals(member.getRoleCode())) { %>
+                <% if ("ADMIN".equals(member.getRoleCode())
+                        && (currentAdminMemberNo == null || !currentAdminMemberNo.equals(member.getMemberNo()))) { %>
                   <span class="text-muted" style="margin-left:8px;font-size:13px;">관리자 계정</span>
                 <% } %>
               </td>
