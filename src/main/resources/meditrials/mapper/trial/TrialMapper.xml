@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.trial.dao.TrialDAO">
+
+    <resultMap id="trialResultMap" type="meditrials.meditrials.trial.vo.TrialVO">
+        <id property="trialNo" column="TRIAL_NO"/>
+        <result property="nctId" column="NCT_ID"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="sourceType" column="SOURCE_TYPE"/>
+        <result property="title" column="TITLE"/>
+        <result property="officialTitle" column="OFFICIAL_TITLE"/>
+        <result property="briefSummary" column="BRIEF_SUMMARY"/>
+        <result property="phase" column="PHASE"/>
+        <result property="studyType" column="STUDY_TYPE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="eligibilityText" column="ELIGIBILITY_TEXT"/>
+        <result property="sex" column="SEX"/>
+        <result property="minAge" column="MIN_AGE"/>
+        <result property="maxAge" column="MAX_AGE"/>
+        <result property="enrollmentTarget" column="ENROLLMENT_TARGET"/>
+        <result property="enrollmentCurrent" column="ENROLLMENT_CURRENT"/>
+        <result property="leadSponsor" column="LEAD_SPONSOR"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="locationText" column="LOCATION_TEXT"/>
+        <result property="contactName" column="CONTACT_NAME"/>
+        <result property="contactPhone" column="CONTACT_PHONE"/>
+        <result property="contactEmail" column="CONTACT_EMAIL"/>
+        <result property="startDateText" column="START_DATE_TEXT"/>
+        <result property="completionDateText" column="COMPLETION_DATE_TEXT"/>
+        <result property="reviewStatus" column="REVIEW_STATUS"/>
+        <result property="rejectReason" column="REJECT_REASON"/>
+        <result property="viewCount" column="VIEW_COUNT"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <sql id="trialColumns">
+        TRIAL_NO,
+        NCT_ID,
+        BUSINESS_NO,
+        SOURCE_TYPE,
+        TITLE,
+        OFFICIAL_TITLE,
+        BRIEF_SUMMARY,
+        PHASE,
+        STUDY_TYPE,
+        RECRUITMENT_STATUS,
+        ELIGIBILITY_TEXT,
+        SEX,
+        MIN_AGE,
+        MAX_AGE,
+        ENROLLMENT_TARGET,
+        ENROLLMENT_CURRENT,
+        LEAD_SPONSOR,
+        INSTITUTION_NAME,
+        LOCATION_TEXT,
+        CONTACT_NAME,
+        CONTACT_PHONE,
+        CONTACT_EMAIL,
+        START_DATE_TEXT,
+        COMPLETION_DATE_TEXT,
+        REVIEW_STATUS,
+        REJECT_REASON,
+        VIEW_COUNT,
+        CREATED_AT,
+        UPDATED_AT
+    </sql>
+
+    <insert id="mergeTrial" parameterType="meditrials.meditrials.trial.vo.TrialVO">
+        MERGE INTO CLINICAL_TRIAL T
+        USING (
+            SELECT #{nctId,jdbcType=VARCHAR} AS NCT_ID
+              FROM DUAL
+        ) S
+        ON (T.NCT_ID = S.NCT_ID)
+        WHEN MATCHED THEN
+            UPDATE SET
+                T.SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR},
+                T.TITLE = #{title,jdbcType=VARCHAR},
+                <if test="officialTitle != null">
+                    T.OFFICIAL_TITLE = #{officialTitle,jdbcType=VARCHAR},
+                </if>
+                <if test="briefSummary != null">
+                    T.BRIEF_SUMMARY = #{briefSummary,jdbcType=CLOB},
+                </if>
+                <if test="phase != null">
+                    T.PHASE = #{phase,jdbcType=VARCHAR},
+                </if>
+                <if test="studyType != null">
+                    T.STUDY_TYPE = #{studyType,jdbcType=VARCHAR},
+                </if>
+                T.RECRUITMENT_STATUS = #{recruitmentStatus,jdbcType=VARCHAR},
+                <if test="eligibilityText != null">
+                    T.ELIGIBILITY_TEXT = #{eligibilityText,jdbcType=CLOB},
+                </if>
+                <if test="sex != null">
+                    T.SEX = #{sex,jdbcType=VARCHAR},
+                </if>
+                <if test="minAge != null">
+                    T.MIN_AGE = #{minAge,jdbcType=VARCHAR},
+                </if>
+                <if test="maxAge != null">
+                    T.MAX_AGE = #{maxAge,jdbcType=VARCHAR},
+                </if>
+                <if test="enrollmentTarget != null">
+                    T.ENROLLMENT_TARGET = #{enrollmentTarget,jdbcType=NUMERIC},
+                </if>
+                <if test="leadSponsor != null">
+                    T.LEAD_SPONSOR = #{leadSponsor,jdbcType=VARCHAR},
+                </if>
+                <if test="institutionName != null">
+                    T.INSTITUTION_NAME = #{institutionName,jdbcType=VARCHAR},
+                </if>
+                <if test="locationText != null">
+                    T.LOCATION_TEXT = #{locationText,jdbcType=CLOB},
+                </if>
+                <if test="contactName != null">
+                    T.CONTACT_NAME = #{contactName,jdbcType=VARCHAR},
+                </if>
+                <if test="contactPhone != null">
+                    T.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+                </if>
+                <if test="contactEmail != null">
+                    T.CONTACT_EMAIL = #{contactEmail,jdbcType=VARCHAR},
+                </if>
+                <if test="startDateText != null">
+                    T.START_DATE_TEXT = #{startDateText,jdbcType=VARCHAR},
+                </if>
+                <if test="completionDateText != null">
+                    T.COMPLETION_DATE_TEXT = #{completionDateText,jdbcType=VARCHAR},
+                </if>
+                T.REVIEW_STATUS = #{reviewStatus,jdbcType=VARCHAR},
+                T.UPDATED_AT = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (
+                TRIAL_NO,
+                NCT_ID,
+                BUSINESS_NO,
+                SOURCE_TYPE,
+                TITLE,
+                OFFICIAL_TITLE,
+                BRIEF_SUMMARY,
+                PHASE,
+                STUDY_TYPE,
+                RECRUITMENT_STATUS,
+                ELIGIBILITY_TEXT,
+                SEX,
+                MIN_AGE,
+                MAX_AGE,
+                ENROLLMENT_TARGET,
+                ENROLLMENT_CURRENT,
+                LEAD_SPONSOR,
+                INSTITUTION_NAME,
+                LOCATION_TEXT,
+                CONTACT_NAME,
+                CONTACT_PHONE,
+                CONTACT_EMAIL,
+                START_DATE_TEXT,
+                COMPLETION_DATE_TEXT,
+                REVIEW_STATUS,
+                VIEW_COUNT,
+                CREATED_AT
+            ) VALUES (
+                SEQ_CLINICAL_TRIAL.NEXTVAL,
+                #{nctId,jdbcType=VARCHAR},
+                NULL,
+                #{sourceType,jdbcType=VARCHAR},
+                #{title,jdbcType=VARCHAR},
+                #{officialTitle,jdbcType=VARCHAR},
+                #{briefSummary,jdbcType=CLOB},
+                #{phase,jdbcType=VARCHAR},
+                #{studyType,jdbcType=VARCHAR},
+                #{recruitmentStatus,jdbcType=VARCHAR},
+                #{eligibilityText,jdbcType=CLOB},
+                #{sex,jdbcType=VARCHAR},
+                #{minAge,jdbcType=VARCHAR},
+                #{maxAge,jdbcType=VARCHAR},
+                #{enrollmentTarget,jdbcType=NUMERIC},
+                0,
+                #{leadSponsor,jdbcType=VARCHAR},
+                #{institutionName,jdbcType=VARCHAR},
+                #{locationText,jdbcType=CLOB},
+                #{contactName,jdbcType=VARCHAR},
+                #{contactPhone,jdbcType=VARCHAR},
+                #{contactEmail,jdbcType=VARCHAR},
+                #{startDateText,jdbcType=VARCHAR},
+                #{completionDateText,jdbcType=VARCHAR},
+                #{reviewStatus,jdbcType=VARCHAR},
+                0,
+                SYSDATE
+            )
+    </insert>
+
+    <select id="selectTrialByNo" resultMap="trialResultMap">
+        SELECT <include refid="trialColumns"/>
+          FROM CLINICAL_TRIAL
+         WHERE TRIAL_NO = #{trialNo}
+    </select>
+
+    <select id="selectTrialByNctId" resultMap="trialResultMap">
+        SELECT <include refid="trialColumns"/>
+          FROM CLINICAL_TRIAL
+         WHERE NCT_ID = #{nctId}
+    </select>
+
+    <select id="selectCachedTrialList" resultMap="trialResultMap">
+        SELECT *
+          FROM (
+                SELECT <include refid="trialColumns"/>
+                  FROM CLINICAL_TRIAL
+                 WHERE SOURCE_TYPE = 'API'
+                   AND REVIEW_STATUS = 'APPROVED'
+                   <if test="keyword != null and keyword != ''">
+                     AND (
+                         LOWER(TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(OFFICIAL_TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+                         OR LOWER(NCT_ID) LIKE '%' || LOWER(#{keyword}) || '%'
+                     )
+                   </if>
+                   <if test="recruitmentStatus != null and recruitmentStatus != ''">
+                     AND RECRUITMENT_STATUS = #{recruitmentStatus}
+                   </if>
+                 ORDER BY NVL(UPDATED_AT, CREATED_AT) DESC
+               )
+         WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+</mapper>

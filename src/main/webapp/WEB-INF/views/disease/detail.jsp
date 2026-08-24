@@ -15,12 +15,21 @@
         displayCode = displayCode.substring("HIRA:".length());
     }
     displayCode = HtmlUtils.htmlEscape(displayCode);
-    String description = disease == null || disease.getDescription() == null || disease.getDescription().isBlank()
-            ? "MedlinePlus에서 연결 가능한 질환 설명을 찾지 못했습니다. 질환명과 KCD 정보는 HIRA 데이터를 기준으로 제공합니다."
-            : HtmlUtils.htmlEscape(disease.getDescription());
-    String symptomText = disease == null || disease.getSymptomText() == null || disease.getSymptomText().isBlank()
-            ? "구조화된 주요 증상 정보는 현재 데이터 출처를 추가 검토 중입니다. 확인되지 않은 증상 정보를 임의로 표시하지 않습니다."
-            : HtmlUtils.htmlEscape(disease.getSymptomText());
+
+    boolean hasDescription = disease != null
+            && disease.getDescription() != null
+            && !disease.getDescription().isBlank();
+    String description = hasDescription
+            ? HtmlUtils.htmlEscape(disease.getDescription())
+            : "등록된 한국어 질환 설명이 없습니다. 연결 가능한 경우 MedlinePlus 영문 설명을 보조 정보로 제공합니다.";
+
+    boolean hasSymptoms = disease != null
+            && disease.getSymptomText() != null
+            && !disease.getSymptomText().isBlank();
+    String[] symptomItems = hasSymptoms
+            ? disease.getSymptomText().split("\\s*,\\s*")
+            : new String[0];
+
     String sourceUrl = disease == null || disease.getSourceUrl() == null
             ? "" : HtmlUtils.htmlEscape(disease.getSourceUrl());
     Integer relatedTrialCount = disease == null ? null : disease.getRelatedTrialCount();
@@ -60,13 +69,31 @@
     <div class="detail-layout">
       <div>
         <section class="detail-section">
-          <h2>질환 설명</h2>
+          <div class="disease-section-title-row">
+            <h2>질환 설명</h2>
+            <% if (hasDescription) { %>
+              <span class="badge badge-green">한국어 정보</span>
+            <% } %>
+          </div>
           <p class="disease-detail-text"><%= description %></p>
         </section>
 
         <section class="detail-section">
           <h2>주요 증상</h2>
-          <p class="disease-detail-text"><%= symptomText %></p>
+          <% if (hasSymptoms) { %>
+            <div class="disease-symptom-list">
+              <% for (String symptom : symptomItems) {
+                   String escapedSymptom = HtmlUtils.htmlEscape(symptom == null ? "" : symptom.trim());
+                   if (!escapedSymptom.isBlank()) { %>
+                <span class="disease-symptom-chip"><%= escapedSymptom %></span>
+              <%   }
+                 } %>
+            </div>
+          <% } else { %>
+            <p class="disease-detail-text disease-detail-muted">
+              등록된 주요 증상 정보가 없습니다. 확인되지 않은 증상 정보를 임의로 표시하지 않습니다.
+            </p>
+          <% } %>
         </section>
 
         <section class="detail-section">
@@ -94,8 +121,12 @@
           <span>국문 질환명 · 영문 질환명 · KCD 코드</span>
         </div>
         <div class="disease-source-row">
+          <strong>MediTrials 질환정보</strong>
+          <span>DB에 등록한 한국어 질환 설명 · 주요 증상 정보를 우선 표시</span>
+        </div>
+        <div class="disease-source-row">
           <strong>MedlinePlus</strong>
-          <span>연결 가능한 질환의 일반 설명 보강</span>
+          <span>한국어 설명이 없는 질환의 영문 일반 설명 보조 자료</span>
         </div>
         <div class="disease-source-row">
           <strong>ClinicalTrials.gov</strong>
@@ -103,11 +134,12 @@
         </div>
         <% if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://")) { %>
           <a class="btn btn-light w-100" href="<%= sourceUrl %>" target="_blank" rel="noopener noreferrer">
-            질환 설명 원문 보기
+            MedlinePlus 참고자료 보기
           </a>
         <% } %>
         <p class="disease-license">
-          MediTrials의 질환 분류는 치료 연구 탐색을 위한 서비스 분류이며 공식 진단 분류를 대체하지 않습니다.
+          질환 설명과 주요 증상은 의료 상담이나 진단을 대신하지 않으며,
+          MediTrials의 질환 분류는 치료 연구 탐색을 위한 서비스 분류입니다.
         </p>
       </aside>
     </div>

@@ -38,16 +38,6 @@ public class PageController {
         return "business/signup";
     }
 
-    @GetMapping("/trials")
-    public String trialList() {
-        return "trial/list";
-    }
-
-    @GetMapping("/trials/{id}")
-    public String trialDetail(@PathVariable String id) {
-        return "trial/detail";
-    }
-
     @GetMapping("/trials/{id}/inquiries/new")
     public String inquiryForm(@PathVariable String id) {
         return "trial/inquiry-form";

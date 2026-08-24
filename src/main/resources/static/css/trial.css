@@ -1,0 +1,53 @@
+.trial-page{background:#fff}
+.trial-title-row{align-items:flex-start;margin-bottom:18px}
+.trial-subtitle{margin:0;color:#77879b;font-size:14px;line-height:1.7}
+.trial-search-panel{padding:22px}
+.trial-keyword-item{flex:2;min-width:280px}
+.trial-notice{margin-bottom:16px}
+.trial-api-notice{margin:12px 0 22px;padding:12px 14px;border-radius:9px;font-size:13px;line-height:1.6}
+.trial-api-notice.ok{background:#eefaf5;border:1px solid #cfeadd;color:#25745b}
+.trial-api-notice.warn{background:#fff8e8;border:1px solid #f1dfae;color:#8b651a}
+.trial-result-head{margin:0 0 14px}
+.trial-result-head h2{margin:0;color:#173f79;font-size:22px}
+.trial-result-count{font-size:13px;color:#7a8798}
+.trial-result-count strong{color:#173f79}
+.trial-result-list{display:flex;flex-direction:column;gap:12px}
+.trial-result-card{display:block;margin:0;padding:22px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.trial-result-card:hover{border-color:#a9c9ef;box-shadow:0 8px 24px rgba(23,72,125,.08);transform:translateY(-1px)}
+.trial-card-head{align-items:flex-start}
+.trial-card-head h3{margin:4px 0 10px;font-size:18px;line-height:1.45}
+.trial-nct{font-size:11px;color:#8a98aa}
+.trial-card-meta{align-items:center;line-height:1.5}
+.trial-empty{min-height:180px;border:1px dashed #cdd9e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7c8b9e}
+.trial-empty strong{color:#173f79}
+.trial-back-link{display:inline-block;margin-bottom:18px;color:#1769d2;font-size:13px;font-weight:750}
+.trial-detail-head{margin-bottom:22px}
+.trial-detail-source{margin-bottom:6px;color:#7c899a;font-size:12px}
+.trial-detail-title{margin-bottom:8px;line-height:1.35}
+.trial-official-title{max-width:920px;margin:0 0 12px;color:#6f7f93;line-height:1.6;font-size:14px}
+.trial-detail-tags{display:flex;gap:8px;flex-wrap:wrap}
+.trial-detail-layout{grid-template-columns:minmax(0,1.65fr) minmax(280px,.7fr)}
+.trial-preline{white-space:pre-line;word-break:break-word}
+.trial-eligibility-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.trial-eligibility-summary span{padding:12px;border:1px solid #e1e8f0;border-radius:9px;background:#fbfcfe;font-size:13px;color:#536579}
+.trial-eligibility-summary strong{display:block;margin-bottom:5px;color:#173f79;font-size:12px}
+.trial-eligibility-text{padding-top:16px;border-top:1px solid #edf1f5;color:#536579;line-height:1.75}
+.trial-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.trial-info-grid>div{padding:14px;border:1px solid #e2e9f0;border-radius:9px;background:#fbfcfe}
+.trial-info-grid span{display:block;margin-bottom:5px;color:#8190a1;font-size:12px}
+.trial-info-grid strong{color:#33465d;font-size:14px;line-height:1.5}
+.trial-location-text{margin-top:16px;padding:14px;border-radius:9px;background:#f7f9fc;color:#5d6d80;font-size:13px;line-height:1.7;white-space:pre-line}
+.trial-contact-box h3{color:#173f79}
+.trial-contact-box p{font-size:13px;color:#617288;line-height:1.65;word-break:break-word}
+.trial-contact-box p strong{color:#173f79}
+.trial-source-note{margin-top:18px;padding-top:15px;border-top:1px solid #dce6f1;font-size:11px!important;color:#8491a1!important}
+@media(max-width:900px){.trial-eligibility-summary{grid-template-columns:1fr 1fr}.trial-detail-layout{grid-template-columns:1fr}}
+@media(max-width:650px){.trial-keyword-item{min-width:100%}.trial-card-head{flex-direction:column}.trial-info-grid,.trial-eligibility-summary{grid-template-columns:1fr}}
+
+/* 국내 CRIS 우선 노출 */
+.trial-source-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.badge-cris{background:#e9f8f2;color:#15805f}
+.trial-result-card-cris{border-color:#cfe9df;background:#fcfffd}
+.trial-result-card-cris:hover{border-color:#9fd3c0;box-shadow:0 8px 24px rgba(25,128,95,.08)}
+.trial-card-english-title{margin:-4px 0 10px;color:#7a8798;font-size:12px;line-height:1.45}
+@media(max-width:900px){.trial-source-badges{justify-content:flex-start}.trial-title-row{gap:12px}}

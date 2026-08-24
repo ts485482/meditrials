@@ -267,3 +267,40 @@
         position: static;
     }
 }
+
+/* 질환 상세: DB 한국어 설명 / 주요 증상 표시 */
+.disease-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.disease-section-title-row h2 {
+    margin: 0;
+}
+
+.disease-symptom-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.disease-symptom-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 13px;
+    border: 1px solid #dbe7f5;
+    border-radius: 999px;
+    background: #f3f7fc;
+    color: #315579;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.disease-detail-muted {
+    color: var(--muted);
+}
