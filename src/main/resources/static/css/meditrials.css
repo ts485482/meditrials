@@ -301,3 +301,16 @@ textarea.form-control{min-height:130px;resize:vertical}
 .empty-state .btn{display:inline-flex;margin-top:12px}
 .favorite-card h3{margin:0 0 8px;color:#173f79}
 .favorite-card form{margin-left:14px;flex:0 0 auto}
+
+/* common header integrated-search submit button */
+.mt-search button{
+  flex:0 0 auto;
+  border:0;
+  border-left:1px solid #e3eaf2;
+  padding:0 14px;
+  background:#f8fbff;
+  color:#1769d2;
+  font-size:12px;
+  font-weight:800;
+}
+.mt-search button:hover{background:#edf5ff}

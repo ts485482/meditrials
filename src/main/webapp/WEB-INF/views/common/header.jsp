@@ -25,7 +25,8 @@
     </nav>
 
     <form class="mt-search" action="${pageContext.request.contextPath}/search" method="get" role="search">
-      <input type="search" name="keyword" placeholder="질환명 또는 임상시험 키워드" aria-label="통합 검색어">
+      <input type="search" name="keyword" maxlength="100" placeholder="질환명 또는 임상시험 키워드" aria-label="통합 검색어">
+      <button type="submit" aria-label="통합검색 실행">검색</button>
     </form>
 
     <div class="mt-auth">
