@@ -16,6 +16,12 @@ public interface TrialDAO {
 
     TrialVO selectTrialByNctId(@Param("nctId") String nctId);
 
+    int insertTrialViewHistory(
+            @Param("trialNo") Long trialNo,
+            @Param("memberNo") Long memberNo);
+
+    int incrementTrialViewCount(@Param("trialNo") Long trialNo);
+
     List<TrialVO> selectCachedTrialList(
             @Param("keyword") String keyword,
             @Param("recruitmentStatus") String recruitmentStatus,

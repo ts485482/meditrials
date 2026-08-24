@@ -201,6 +201,7 @@
         SELECT <include refid="trialColumns"/>
           FROM CLINICAL_TRIAL
          WHERE TRIAL_NO = #{trialNo}
+           AND REVIEW_STATUS = 'APPROVED'
     </select>
 
     <select id="selectTrialByNctId" resultMap="trialResultMap">
@@ -286,5 +287,29 @@
                )
          WHERE ROWNUM &lt;= #{limit}
     </select>
+
+    <insert id="insertTrialViewHistory">
+        INSERT INTO TRIAL_VIEW_HISTORY (
+            VIEW_NO,
+            TRIAL_NO,
+            MEMBER_NO,
+            VIEWED_AT
+        )
+        SELECT
+            SEQ_TRIAL_VIEW_HISTORY.NEXTVAL,
+            T.TRIAL_NO,
+            #{memberNo,jdbcType=NUMERIC},
+            SYSDATE
+          FROM CLINICAL_TRIAL T
+         WHERE T.TRIAL_NO = #{trialNo}
+           AND T.REVIEW_STATUS = 'APPROVED'
+    </insert>
+
+    <update id="incrementTrialViewCount">
+        UPDATE CLINICAL_TRIAL
+           SET VIEW_COUNT = NVL(VIEW_COUNT, 0) + 1
+         WHERE TRIAL_NO = #{trialNo}
+           AND REVIEW_STATUS = 'APPROVED'
+    </update>
 
 </mapper>

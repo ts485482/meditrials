@@ -99,6 +99,7 @@ public class TrialController {
         }
 
         Long loginUserMemberNo = getLoginUserMemberNo(request);
+        trialService.recordTrialView(trialNo, loginUserMemberNo);
         model.addAttribute("trial", trial);
         model.addAttribute(
                 "favoriteTrial",

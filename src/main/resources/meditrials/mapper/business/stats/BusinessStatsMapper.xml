@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.business.stats.dao.BusinessStatsDAO">
+
+    <resultMap id="businessStatsDetailResultMap"
+               type="meditrials.meditrials.business.stats.vo.BusinessStatsDetailVO">
+        <result property="trialNo" column="TRIAL_NO"/>
+        <result property="title" column="TITLE"/>
+        <result property="periodLabel" column="PERIOD_LABEL"/>
+        <result property="viewCount" column="VIEW_COUNT"/>
+        <result property="favoriteCount" column="FAVORITE_COUNT"/>
+        <result property="inquiryCount" column="INQUIRY_COUNT"/>
+        <result property="participantCount" column="PARTICIPANT_COUNT"/>
+    </resultMap>
+
+    <select id="selectTrialStatsByBusinessNo" resultMap="businessStatsDetailResultMap">
+        SELECT
+            T.TRIAL_NO,
+            T.TITLE,
+            NULL AS PERIOD_LABEL,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_VIEW_HISTORY V
+                 WHERE V.TRIAL_NO = T.TRIAL_NO
+            ) AS VIEW_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM FAVORITE_TRIAL F
+                 WHERE F.TRIAL_NO = T.TRIAL_NO
+            ) AS FAVORITE_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_INQUIRY I
+                 WHERE I.TRIAL_NO = T.TRIAL_NO
+            ) AS INQUIRY_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_PARTICIPATION P
+                 WHERE P.TRIAL_NO = T.TRIAL_NO
+                   AND P.STATUS IN ('APPROVED', 'PARTICIPATING', 'COMPLETED')
+            ) AS PARTICIPANT_COUNT
+          FROM CLINICAL_TRIAL T
+         WHERE T.BUSINESS_NO = #{businessNo}
+           AND T.SOURCE_TYPE = 'BUSINESS'
+           AND T.REVIEW_STATUS = 'APPROVED'
+         ORDER BY NVL(T.UPDATED_AT, T.CREATED_AT) DESC,
+                  T.TRIAL_NO DESC
+    </select>
+
+    <select id="selectDailyStatsByBusinessNo" resultMap="businessStatsDetailResultMap">
+        WITH DAY_LIST AS (
+            SELECT TRUNC(SYSDATE) - (7 - LEVEL) AS STAT_DATE
+              FROM DUAL
+            CONNECT BY LEVEL &lt;= 7
+        )
+        SELECT
+            NULL AS TRIAL_NO,
+            NULL AS TITLE,
+            TO_CHAR(D.STAT_DATE, 'MM.DD') AS PERIOD_LABEL,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_VIEW_HISTORY V
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = V.TRIAL_NO
+                 WHERE T.BUSINESS_NO = #{businessNo}
+                   AND T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   AND V.VIEWED_AT &gt;= D.STAT_DATE
+                   AND V.VIEWED_AT &lt; D.STAT_DATE + 1
+            ) AS VIEW_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM FAVORITE_TRIAL F
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = F.TRIAL_NO
+                 WHERE T.BUSINESS_NO = #{businessNo}
+                   AND T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   AND F.CREATED_AT &gt;= D.STAT_DATE
+                   AND F.CREATED_AT &lt; D.STAT_DATE + 1
+            ) AS FAVORITE_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_INQUIRY I
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = I.TRIAL_NO
+                 WHERE T.BUSINESS_NO = #{businessNo}
+                   AND T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   AND I.CREATED_AT &gt;= D.STAT_DATE
+                   AND I.CREATED_AT &lt; D.STAT_DATE + 1
+            ) AS INQUIRY_COUNT,
+            (
+                SELECT COUNT(*)
+                  FROM TRIAL_PARTICIPATION P
+                  JOIN CLINICAL_TRIAL T
+                    ON T.TRIAL_NO = P.TRIAL_NO
+                 WHERE T.BUSINESS_NO = #{businessNo}
+                   AND T.SOURCE_TYPE = 'BUSINESS'
+                   AND T.REVIEW_STATUS = 'APPROVED'
+                   AND P.STATUS IN ('APPROVED', 'PARTICIPATING', 'COMPLETED')
+                   AND COALESCE(P.APPROVED_AT, P.STARTED_AT, P.COMPLETED_AT, P.APPLIED_AT)
+                       &gt;= D.STAT_DATE
+                   AND COALESCE(P.APPROVED_AT, P.STARTED_AT, P.COMPLETED_AT, P.APPLIED_AT)
+                       &lt; D.STAT_DATE + 1
+            ) AS PARTICIPANT_COUNT
+          FROM DAY_LIST D
+         ORDER BY D.STAT_DATE
+    </select>
+
+</mapper>

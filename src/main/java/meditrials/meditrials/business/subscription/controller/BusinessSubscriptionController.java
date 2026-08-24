@@ -68,15 +68,6 @@ public class BusinessSubscriptionController {
     }
 
 
-    @GetMapping("/stats")
-    public String premiumStats(HttpSession session) {
-        Long memberNo = getLoginMemberNo(session);
-        if (!businessSubscriptionService.isPremiumActive(memberNo)) {
-            return "redirect:/business/plans?premiumRequired=true";
-        }
-        return "business/stats";
-    }
-
     private String resolveApplyError(String errorCode) {
         if ("BUSINESS_NOT_APPROVED".equals(errorCode)) {
             return "관리자 승인이 완료된 사업자만 프리미엄을 신청할 수 있습니다.";

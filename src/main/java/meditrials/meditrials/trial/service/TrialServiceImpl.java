@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import meditrials.meditrials.disease.config.DiseaseFocusCatalog;
 import meditrials.meditrials.disease.config.DiseaseFocusCatalog.FocusDisease;
@@ -98,6 +99,19 @@ public class TrialServiceImpl implements TrialService {
             return cached;
         }
         return cached;
+    }
+
+    @Override
+    @Transactional
+    public void recordTrialView(Long trialNo, Long memberNo) {
+        if (trialNo == null) {
+            return;
+        }
+
+        int inserted = trialDAO.insertTrialViewHistory(trialNo, memberNo);
+        if (inserted == 1) {
+            trialDAO.incrementTrialViewCount(trialNo);
+        }
     }
 
     private TrialSearchResultVO searchDomesticTrials(

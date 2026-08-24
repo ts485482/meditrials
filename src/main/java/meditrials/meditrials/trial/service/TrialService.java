@@ -12,4 +12,6 @@ public interface TrialService {
             String scope);
 
     TrialVO getTrialDetail(Long trialNo);
+
+    void recordTrialView(Long trialNo, Long memberNo);
 }
