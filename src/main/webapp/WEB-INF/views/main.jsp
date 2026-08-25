@@ -18,8 +18,10 @@
     }
 %>
 <%
-    List<TrialVO> premiumTrials = request.getAttribute("premiumTrials") instanceof List<?> list
-            ? (List<TrialVO>) list : List.of();
+    List<TrialVO> todayTrials = request.getAttribute("todayTrials") instanceof List<?> todayList
+            ? (List<TrialVO>) todayList : List.of();
+    List<TrialVO> premiumTrials = request.getAttribute("premiumTrials") instanceof List<?> premiumList
+            ? (List<TrialVO>) premiumList : List.of();
     TrialVO premiumTrial = premiumTrials.isEmpty() ? null : premiumTrials.get(0);
 %>
 <!DOCTYPE html>
@@ -95,11 +97,16 @@
         <a href="${pageContext.request.contextPath}/trials">전체보기</a>
       </div>
       <ul class="today-trial-list">
-        <li><a href="${pageContext.request.contextPath}/trials/1">파브리병 유전자 치료제 임상 2상</a><span class="status-pill recruiting">모집중</span></li>
-        <li><a href="${pageContext.request.contextPath}/trials/2">낭포성 섬유증 표적 치료제 2상</a><span class="status-pill recruiting">모집중</span></li>
-        <li><a href="${pageContext.request.contextPath}/trials/3">ALS 줄기세포 치료제 임상 1/2상</a><span class="status-pill recruiting">모집중</span></li>
-        <li><a href="${pageContext.request.contextPath}/trials/4">뒤센형 근이영양증 임상 2상</a><span class="status-pill recruiting">모집중</span></li>
-        <li><a href="${pageContext.request.contextPath}/trials/5">샤르코마리투스병 유전자 치료제 1상</a><span class="status-pill recruiting">모집중</span></li>
+        <% if (todayTrials.isEmpty()) { %>
+          <li class="today-trial-empty">현재 저장된 국내 모집중 임상시험이 없습니다.</li>
+        <% } else { %>
+          <% for (TrialVO trial : todayTrials) { %>
+            <li>
+              <a href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>"><%= h(trial.getTitle()) %></a>
+              <span class="status-pill recruiting"><%= h(statusLabel(trial.getRecruitmentStatus())) %></span>
+            </li>
+          <% } %>
+        <% } %>
       </ul>
     </article>
 

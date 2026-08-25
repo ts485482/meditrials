@@ -33,4 +33,6 @@ public interface TrialDAO {
             @Param("limit") int limit);
 
     List<TrialVO> selectActivePremiumTrialList(@Param("limit") int limit);
+
+    List<TrialVO> selectTodayTrialList(@Param("limit") int limit);
 }

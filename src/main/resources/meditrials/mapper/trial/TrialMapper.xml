@@ -317,6 +317,33 @@
          WHERE ROWNUM &lt;= #{limit}
     </select>
 
+    <select id="selectTodayTrialList" resultMap="trialResultMap">
+        SELECT *
+          FROM (
+                SELECT <include refid="trialColumns"/>
+                  FROM CLINICAL_TRIAL
+                 WHERE REVIEW_STATUS = 'APPROVED'
+                   AND RECRUITMENT_STATUS = 'RECRUITING'
+                   AND (
+                        SOURCE_TYPE = 'BUSINESS'
+                        OR (
+                            SOURCE_TYPE = 'API'
+                            AND (
+                                UPPER(NVL(NCT_ID, '')) LIKE 'KCT%'
+                                OR DBMS_LOB.INSTR(LOWER(LOCATION_TEXT), 'south korea') &gt; 0
+                                OR DBMS_LOB.INSTR(LOCATION_TEXT, '대한민국') &gt; 0
+                                OR DBMS_LOB.INSTR(LOCATION_TEXT, '한국') &gt; 0
+                            )
+                        )
+                   )
+                 ORDER BY
+                     CASE WHEN SOURCE_TYPE = 'BUSINESS' THEN 0 ELSE 1 END,
+                     NVL(UPDATED_AT, CREATED_AT) DESC,
+                     TRIAL_NO DESC
+               )
+         WHERE ROWNUM &lt;= #{limit}
+    </select>
+
     <select id="selectActivePremiumTrialList" resultMap="trialWithConditionResultMap">
         SELECT *
           FROM (

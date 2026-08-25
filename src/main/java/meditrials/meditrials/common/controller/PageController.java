@@ -23,6 +23,7 @@ public class PageController {
 
     @GetMapping("/main")
     public String main(Model model) {
+        model.addAttribute("todayTrials", trialService.getTodayTrials(5));
         model.addAttribute("premiumTrials", trialService.getActivePremiumTrials(3));
         return "main";
     }

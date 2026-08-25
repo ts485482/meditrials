@@ -17,5 +17,7 @@ public interface TrialService {
 
     List<TrialVO> getActivePremiumTrials(int limit);
 
+    List<TrialVO> getTodayTrials(int limit);
+
     void recordTrialView(Long trialNo, Long memberNo);
 }
