@@ -292,3 +292,56 @@ dialog.trial-inquiry-dialog::backdrop{
   .trial-sort-form{width:100%}
   .trial-sort-form .form-control{flex:1;width:auto}
 }
+
+/* 2026-08-25: 임상시험 검색 결과 정렬 컨트롤 한 줄 정렬 보정 */
+.trial-result-tools{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:nowrap;
+  min-width:360px;
+}
+.trial-sort-form{
+  display:grid;
+  grid-template-columns:auto 190px auto;
+  align-items:end;
+  justify-content:end;
+  column-gap:8px;
+  width:auto;
+  margin:0;
+  flex-wrap:nowrap;
+}
+.trial-sort-form label{
+  align-self:center;
+  margin:0;
+}
+.trial-sort-form .form-control{
+  width:190px !important;
+  min-width:190px;
+  flex:none !important;
+  box-sizing:border-box;
+}
+.trial-sort-button{
+  width:auto !important;
+  min-width:58px;
+  flex:0 0 auto;
+  align-self:end;
+  margin:0;
+}
+@media(max-width:760px){
+  .trial-result-tools{
+    min-width:0;
+    width:100%;
+    align-items:stretch;
+  }
+  .trial-sort-form{
+    grid-template-columns:auto minmax(0,1fr) auto;
+    width:100%;
+  }
+  .trial-sort-form .form-control{
+    width:100% !important;
+    min-width:0;
+  }
+}

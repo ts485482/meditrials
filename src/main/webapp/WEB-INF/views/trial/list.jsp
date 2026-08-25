@@ -89,7 +89,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>임상시험 검색 | MediTrials</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/trial.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/trial.css?v=20260825-1505">
 </head>
 <body>
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
