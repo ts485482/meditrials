@@ -345,3 +345,108 @@ dialog.trial-inquiry-dialog::backdrop{
     min-width:0;
   }
 }
+
+/* 2026-08-25: 임상시험 목록 비동기 로딩 */
+.trial-card-badges{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.trial-async-loading,
+.trial-async-error{
+  margin-top:4px;
+  padding:24px;
+  border:1px solid #d9e5f3;
+  border-radius:14px;
+  background:#fbfdff;
+}
+.async-loading-heading{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:18px;
+}
+.async-loading-heading strong,
+.async-loading-heading span{
+  display:block;
+}
+.async-loading-heading strong{
+  color:#173f79;
+  font-size:15px;
+}
+.async-loading-heading span{
+  margin-top:4px;
+  color:#718196;
+  font-size:12px;
+  line-height:1.5;
+}
+.async-spinner{
+  width:26px;
+  height:26px;
+  flex:0 0 26px;
+  border:3px solid #dbe9f8;
+  border-top-color:#1769d2;
+  border-radius:50%;
+  animation:mt-async-spin .8s linear infinite;
+}
+@keyframes mt-async-spin{
+  to{transform:rotate(360deg)}
+}
+.trial-skeleton-list{
+  display:grid;
+  gap:10px;
+}
+.trial-skeleton-card{
+  display:grid;
+  gap:11px;
+  min-height:104px;
+  padding:18px;
+  border:1px solid #e4ebf3;
+  border-radius:12px;
+  background:#fff;
+}
+.async-skeleton-line{
+  display:block;
+  width:72%;
+  height:12px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#edf2f7 25%,#f8fafc 42%,#edf2f7 65%);
+  background-size:400% 100%;
+  animation:mt-skeleton 1.3s ease-in-out infinite;
+}
+.async-skeleton-line.is-short{width:28%;height:10px}
+.async-skeleton-line.is-title{width:58%;height:18px}
+@keyframes mt-skeleton{
+  0%{background-position:100% 0}
+  100%{background-position:0 0}
+}
+.trial-async-error{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:190px;
+  text-align:center;
+}
+.trial-async-error[hidden]{display:none!important}
+.trial-async-error strong{
+  color:#173f79;
+  font-size:17px;
+}
+.trial-async-error span{
+  color:#718196;
+  font-size:13px;
+}
+.trial-async-error .btn{margin-top:8px}
+@media(max-width:700px){
+  .trial-async-loading,
+  .trial-async-error{padding:18px}
+  .trial-card-badges{justify-content:flex-start}
+}
+.trial-async-loading[hidden],
+.trial-api-notice[hidden],
+.trial-empty[hidden],
+.trial-result-list[hidden]{display:none!important}

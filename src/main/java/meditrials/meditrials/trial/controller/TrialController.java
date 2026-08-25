@@ -1,14 +1,19 @@
 package meditrials.meditrials.trial.controller;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -23,6 +28,7 @@ import meditrials.meditrials.trial.vo.TrialVO;
 @RequestMapping("/trials")
 public class TrialController {
 
+    private static final Logger log = LoggerFactory.getLogger(TrialController.class);
     private static final String ROLE_USER = "USER";
 
     private static final Set<String> ALLOWED_STATUSES = Set.of(
@@ -60,6 +66,10 @@ public class TrialController {
         this.trialParticipationService = trialParticipationService;
     }
 
+    /**
+     * 검색 화면 자체는 외부 API를 기다리지 않고 즉시 반환한다.
+     * 실제 임상시험 데이터는 /trials/data 를 JavaScript fetch로 조회한다.
+     */
     @GetMapping
     public String trialList(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
@@ -74,21 +84,7 @@ public class TrialController {
         String normalizedPhase = normalize(phase, ALLOWED_PHASES, "ALL");
         String normalizedScope = normalize(scope, ALLOWED_SCOPES, "DOMESTIC");
         String normalizedSort = normalize(sort, ALLOWED_SORTS, "RECOMMENDED");
-        TrialSearchResultVO result = trialService.searchTrials(
-                keyword,
-                normalizedStatus,
-                normalizedPhase,
-                normalizedScope,
-                normalizedSort);
 
-        model.addAttribute("trials", result.getTrials());
-        model.addAttribute("displayedCount", result.getDisplayedCount());
-        model.addAttribute("apiTotalCount", result.getApiTotalCount());
-        model.addAttribute("crisTotalCount", result.getCrisTotalCount());
-        model.addAttribute("clinicalTrialsTotalCount", result.getClinicalTrialsTotalCount());
-        model.addAttribute("apiAvailable", result.isApiAvailable());
-        model.addAttribute("crisAvailable", result.isCrisAvailable());
-        model.addAttribute("apiNotice", result.getNotice());
         model.addAttribute("keyword", keyword == null ? "" : keyword.trim());
         model.addAttribute("selectedStatus", normalizedStatus);
         model.addAttribute("selectedPhase", normalizedPhase);
@@ -99,6 +95,39 @@ public class TrialController {
         }
 
         return "trial/list";
+    }
+
+    /**
+     * 검색 결과 데이터 전용 엔드포인트.
+     * CRIS / ClinicalTrials.gov / 승인된 사업자 임상시험을 기존 서비스 로직 그대로 조회한다.
+     */
+    @GetMapping("/data")
+    @ResponseBody
+    public ResponseEntity<?> trialListData(
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "status", defaultValue = "ALL") String status,
+            @RequestParam(name = "phase", defaultValue = "ALL") String phase,
+            @RequestParam(name = "scope", defaultValue = "DOMESTIC") String scope,
+            @RequestParam(name = "sort", defaultValue = "RECOMMENDED") String sort) {
+
+        String normalizedStatus = normalize(status, ALLOWED_STATUSES, "ALL");
+        String normalizedPhase = normalize(phase, ALLOWED_PHASES, "ALL");
+        String normalizedScope = normalize(scope, ALLOWED_SCOPES, "DOMESTIC");
+        String normalizedSort = normalize(sort, ALLOWED_SORTS, "RECOMMENDED");
+
+        try {
+            TrialSearchResultVO result = trialService.searchTrials(
+                    keyword,
+                    normalizedStatus,
+                    normalizedPhase,
+                    normalizedScope,
+                    normalizedSort);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException exception) {
+            log.error("임상시험 비동기 검색 중 오류가 발생했습니다.", exception);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "임상시험 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요."));
+        }
     }
 
     @GetMapping("/{id}")
