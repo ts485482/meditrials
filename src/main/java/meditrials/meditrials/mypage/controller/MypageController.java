@@ -1,5 +1,7 @@
 package meditrials.meditrials.mypage.controller;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,25 +15,36 @@ import jakarta.servlet.http.HttpSession;
 import meditrials.meditrials.common.constant.SessionConstants;
 import meditrials.meditrials.member.vo.MemberVO;
 import meditrials.meditrials.mypage.service.MypageService;
+import meditrials.meditrials.participation.service.TrialParticipationService;
+import meditrials.meditrials.participation.vo.TrialParticipationVO;
 
 @Controller
 @RequestMapping("/mypage")
 public class MypageController {
 
     private final MypageService mypageService;
+    private final TrialParticipationService trialParticipationService;
 
-    public MypageController(MypageService mypageService) {
+    public MypageController(
+            MypageService mypageService,
+            TrialParticipationService trialParticipationService) {
         this.mypageService = mypageService;
+        this.trialParticipationService = trialParticipationService;
     }
 
     @GetMapping
     public String main(HttpServletRequest request, Model model) {
         Long memberNo = getLoginMemberNo(request);
+        List<TrialParticipationVO> participations = trialParticipationService.getMemberParticipations(memberNo);
+
         model.addAttribute("member", mypageService.getMemberProfile(memberNo));
         model.addAttribute("summary", mypageService.getSummary(memberNo));
         model.addAttribute("recentFavoriteDiseases", mypageService.getRecentFavoriteDiseases(memberNo));
         model.addAttribute("recentFavoriteTrials", mypageService.getRecentFavoriteTrials(memberNo));
         model.addAttribute("recentInquiries", mypageService.getRecentInquiries(memberNo));
+        model.addAttribute("participationCount", participations.size());
+        model.addAttribute("activeParticipationCount", countActiveParticipations(participations));
+        model.addAttribute("recentParticipations", participations.stream().limit(3).toList());
         return "mypage/main";
     }
 
@@ -90,6 +103,13 @@ public class MypageController {
             model.addAttribute("passwordError", exception.getMessage());
             return "mypage/password";
         }
+    }
+
+    private long countActiveParticipations(List<TrialParticipationVO> participations) {
+        return participations.stream()
+                .filter(participation -> "APPROVED".equals(participation.getStatus())
+                        || "PARTICIPATING".equals(participation.getStatus()))
+                .count();
     }
 
     private Long getLoginMemberNo(HttpServletRequest request) {

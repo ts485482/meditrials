@@ -4,6 +4,7 @@
 <%@ page import="meditrials.meditrials.member.vo.MemberVO" %>
 <%@ page import="meditrials.meditrials.mypage.vo.MypageSummaryVO" %>
 <%@ page import="meditrials.meditrials.mypage.vo.MypageRecentItemVO" %>
+<%@ page import="meditrials.meditrials.participation.vo.TrialParticipationVO" %>
 <%@ page import="org.springframework.web.util.HtmlUtils" %>
 <%!
     private String h(String value) {
@@ -37,6 +38,23 @@
     private String inquiryStatusClass(String value) {
         return "ANSWERED".equals(value) ? "badge-green" : "badge-gray";
     }
+
+    private String participationStatusLabel(String value) {
+        if ("APPLIED".equals(value)) return "승인대기";
+        if ("APPROVED".equals(value)) return "참여승인";
+        if ("PARTICIPATING".equals(value)) return "참여중";
+        if ("COMPLETED".equals(value)) return "참여완료";
+        if ("REJECTED".equals(value)) return "거절";
+        if ("WITHDRAWN".equals(value)) return "요청취소";
+        return value == null ? "상태 미확인" : value;
+    }
+
+    private String participationStatusClass(String value) {
+        if ("APPROVED".equals(value) || "PARTICIPATING".equals(value) || "COMPLETED".equals(value)) return "badge-green";
+        if ("REJECTED".equals(value)) return "badge-red";
+        if ("APPLIED".equals(value)) return "badge-amber";
+        return "badge-gray";
+    }
 %>
 <%
     MemberVO member = request.getAttribute("member") instanceof MemberVO value ? value : null;
@@ -48,6 +66,10 @@
             ? (List<MypageRecentItemVO>) list : List.of();
     List<MypageRecentItemVO> recentInquiries = request.getAttribute("recentInquiries") instanceof List<?> list
             ? (List<MypageRecentItemVO>) list : List.of();
+    List<TrialParticipationVO> recentParticipations = request.getAttribute("recentParticipations") instanceof List<?> list
+            ? (List<TrialParticipationVO>) list : List.of();
+    Number participationCount = request.getAttribute("participationCount") instanceof Number value ? value : 0;
+    Number activeParticipationCount = request.getAttribute("activeParticipationCount") instanceof Number value ? value : 0;
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -66,13 +88,13 @@
       <div>
         <h1>마이페이지</h1>
         <p class="text-muted">
-          <%= member == null ? "내 관심정보와 문의 내역을 확인합니다." : h(member.getMemberName()) + "님의 관심정보와 문의 내역을 확인합니다." %>
+          <%= member == null ? "내 관심정보와 문의·참여 현황을 확인합니다." : h(member.getMemberName()) + "님의 관심정보와 문의·참여 현황을 확인합니다." %>
         </p>
       </div>
       <a class="btn btn-outline" href="${pageContext.request.contextPath}/mypage/profile">회원정보 수정</a>
     </div>
 
-    <div class="stat-grid mypage-stat-grid">
+    <div class="stat-grid six">
       <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/favorites?tab=diseases">
         <span>관심 질환</span><strong><%= summary.getFavoriteDiseaseCount() %></strong>
       </a>
@@ -85,9 +107,15 @@
       <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/inquiries">
         <span>답변 완료</span><strong><%= summary.getAnsweredInquiryCount() %></strong>
       </a>
+      <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/participations">
+        <span>참여 요청</span><strong><%= participationCount.longValue() %></strong>
+      </a>
+      <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/participations">
+        <span>진행 중 참여</span><strong><%= activeParticipationCount.longValue() %></strong>
+      </a>
     </div>
 
-    <div class="content-grid-3 mypage-content-grid">
+    <div class="content-grid-2 mypage-content-grid">
       <section class="table-card mypage-preview-card">
         <div class="mypage-card-head">
           <h3>최근 관심 질환</h3>
@@ -152,6 +180,31 @@
                   <div class="mypage-preview-meta">
                     <span class="badge <%= inquiryStatusClass(item.getStatus()) %>"><%= h(inquiryStatusLabel(item.getStatus())) %></span>
                     <small><%= formatDate(item.getCreatedAt()) %></small>
+                  </div>
+                </a>
+              </li>
+            <% } %>
+          </ul>
+        <% } %>
+      </section>
+
+      <section class="table-card mypage-preview-card">
+        <div class="mypage-card-head">
+          <h3>최근 참여 요청</h3>
+          <a href="${pageContext.request.contextPath}/mypage/participations">전체 보기</a>
+        </div>
+        <% if (recentParticipations.isEmpty()) { %>
+          <div class="mypage-empty">등록한 참여 요청이 없습니다.</div>
+        <% } else { %>
+          <ul class="list-clean mypage-preview-list">
+            <% for (TrialParticipationVO participation : recentParticipations) { %>
+              <li>
+                <a href="${pageContext.request.contextPath}/mypage/participations?participationNo=<%= participation.getParticipationNo() %>">
+                  <strong><%= h(participation.getTrialTitle()) %></strong>
+                  <span><%= h(participation.getBusinessOrgName() == null ? participation.getInstitutionName() : participation.getBusinessOrgName()) %></span>
+                  <div class="mypage-preview-meta">
+                    <span class="badge <%= participationStatusClass(participation.getStatus()) %>"><%= h(participationStatusLabel(participation.getStatus())) %></span>
+                    <small><%= formatDate(participation.getAppliedAt()) %></small>
                   </div>
                 </a>
               </li>
