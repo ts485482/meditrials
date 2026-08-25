@@ -23,4 +23,8 @@ public interface TrialParticipationService {
     void approveParticipation(Long businessNo, Long participationNo);
 
     void rejectParticipation(Long businessNo, Long participationNo);
+
+    void startParticipation(Long businessNo, Long participationNo);
+
+    void completeParticipation(Long businessNo, Long participationNo);
 }

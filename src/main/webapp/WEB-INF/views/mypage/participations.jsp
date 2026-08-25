@@ -115,6 +115,14 @@
                 <span>승인일</span>
                 <strong><%= formatDate(selectedParticipation.getApprovedAt()) %></strong>
               </div>
+              <div>
+                <span>참여 시작일</span>
+                <strong><%= formatDate(selectedParticipation.getStartedAt()) %></strong>
+              </div>
+              <div>
+                <span>참여 완료일</span>
+                <strong><%= formatDate(selectedParticipation.getCompletedAt()) %></strong>
+              </div>
             </div>
 
             <div class="participation-state-box <%= statusClass(selectedParticipation.getStatus()) %>">

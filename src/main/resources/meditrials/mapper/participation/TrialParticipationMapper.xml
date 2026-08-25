@@ -227,4 +227,23 @@
            AND STATUS = 'APPLIED'
     </update>
 
+    <update id="startParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET STATUS = 'PARTICIPATING',
+               STARTED_AT = SYSDATE,
+               COMPLETED_AT = NULL
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND BUSINESS_NO = #{businessNo}
+           AND STATUS = 'APPROVED'
+    </update>
+
+    <update id="completeParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET STATUS = 'COMPLETED',
+               COMPLETED_AT = SYSDATE
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND BUSINESS_NO = #{businessNo}
+           AND STATUS = 'PARTICIPATING'
+    </update>
+
 </mapper>

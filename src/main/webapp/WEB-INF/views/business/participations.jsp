@@ -39,6 +39,8 @@
     String businessError = request.getAttribute("businessError") instanceof String value ? value : null;
     long appliedCount = request.getAttribute("appliedCount") instanceof Number value ? value.longValue() : 0L;
     long approvedCount = request.getAttribute("approvedCount") instanceof Number value ? value.longValue() : 0L;
+    long participatingCount = request.getAttribute("participatingCount") instanceof Number value ? value.longValue() : 0L;
+    long completedCount = request.getAttribute("completedCount") instanceof Number value ? value.longValue() : 0L;
     long rejectedCount = request.getAttribute("rejectedCount") instanceof Number value ? value.longValue() : 0L;
 %>
 <!DOCTYPE html>
@@ -57,7 +59,7 @@
     <div class="dashboard-head participation-page-head">
       <div>
         <h1>참여 관리</h1>
-        <p class="text-muted">내 기관의 임상시험에 접수된 실제 참여 요청을 확인하고 승인 또는 거절합니다.</p>
+        <p class="text-muted">내 기관의 임상시험 참여 요청을 검토하고 승인 이후 참여중·참여완료 상태까지 관리합니다.</p>
       </div>
     </div>
 
@@ -71,10 +73,12 @@
       <div class="participation-error"><%= h(businessError) %></div>
     <% } %>
 
-    <div class="participation-summary">
+    <div class="participation-summary participation-summary-six">
       <div class="participation-stat"><span>전체 요청</span><strong><%= participations.size() %></strong></div>
       <div class="participation-stat"><span>승인 대기</span><strong><%= appliedCount %></strong></div>
       <div class="participation-stat"><span>참여 승인</span><strong><%= approvedCount %></strong></div>
+      <div class="participation-stat"><span>참여중</span><strong><%= participatingCount %></strong></div>
+      <div class="participation-stat"><span>참여완료</span><strong><%= completedCount %></strong></div>
       <div class="participation-stat"><span>거절</span><strong><%= rejectedCount %></strong></div>
     </div>
 
@@ -132,6 +136,14 @@
                 <span>승인일</span>
                 <strong><%= formatDate(selectedParticipation.getApprovedAt()) %></strong>
               </div>
+              <div>
+                <span>참여 시작일</span>
+                <strong><%= formatDate(selectedParticipation.getStartedAt()) %></strong>
+              </div>
+              <div>
+                <span>참여 완료일</span>
+                <strong><%= formatDate(selectedParticipation.getCompletedAt()) %></strong>
+              </div>
             </div>
 
             <div class="participation-guide-box">
@@ -140,13 +152,19 @@
                 <p>문의 답변과는 별개입니다. 실제 참여 요청을 승인하면 사업자 통계의 ‘참여확정’ 건수에 반영됩니다.</p>
               <% } else if ("APPROVED".equals(selectedParticipation.getStatus())) { %>
                 <h3>참여 승인된 요청입니다.</h3>
-                <p>사용자 참여 요청 내역에도 ‘참여승인’ 상태로 표시됩니다.</p>
+                <p>실제 참여 일정이 시작되면 ‘참여 시작’으로 변경해주세요.</p>
+              <% } else if ("PARTICIPATING".equals(selectedParticipation.getStatus())) { %>
+                <h3>현재 임상시험에 참여 중입니다.</h3>
+                <p>기관에서 참여 절차가 모두 종료되면 ‘참여 완료’로 변경할 수 있습니다.</p>
+              <% } else if ("COMPLETED".equals(selectedParticipation.getStatus())) { %>
+                <h3>참여 완료 처리된 내역입니다.</h3>
+                <p>사용자 마이페이지에도 참여완료 상태와 완료일이 표시됩니다.</p>
               <% } else if ("REJECTED".equals(selectedParticipation.getStatus())) { %>
                 <h3>거절 처리된 요청입니다.</h3>
                 <p>현재 모집 중인 시험이라면 사용자가 다시 참여 요청할 수 있습니다.</p>
               <% } else { %>
                 <h3>현재 상태: <%= statusLabel(selectedParticipation.getStatus()) %></h3>
-                <p>이 요청은 현재 승인/거절 처리 대상이 아닙니다.</p>
+                <p>사용자가 취소한 참여 요청입니다.</p>
               <% } %>
             </div>
 
@@ -157,6 +175,18 @@
                 </form>
                 <form method="post" action="${pageContext.request.contextPath}/business/participations/<%= selectedParticipation.getParticipationNo() %>/approve" onsubmit="return confirm('이 사용자의 참여 요청을 승인하시겠습니까?');">
                   <button class="btn btn-primary" type="submit">참여 승인</button>
+                </form>
+              </div>
+            <% } else if ("APPROVED".equals(selectedParticipation.getStatus())) { %>
+              <div class="business-participation-actions">
+                <form method="post" action="${pageContext.request.contextPath}/business/participations/<%= selectedParticipation.getParticipationNo() %>/start" onsubmit="return confirm('실제 임상시험 참여가 시작되었습니까?');">
+                  <button class="btn btn-primary" type="submit">참여 시작</button>
+                </form>
+              </div>
+            <% } else if ("PARTICIPATING".equals(selectedParticipation.getStatus())) { %>
+              <div class="business-participation-actions">
+                <form method="post" action="${pageContext.request.contextPath}/business/participations/<%= selectedParticipation.getParticipationNo() %>/complete" onsubmit="return confirm('이 사용자의 임상시험 참여를 완료 처리하시겠습니까?');">
+                  <button class="btn btn-primary" type="submit">참여 완료</button>
                 </form>
               </div>
             <% } %>

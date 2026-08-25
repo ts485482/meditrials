@@ -159,6 +159,36 @@ public class TrialParticipationServiceImpl implements TrialParticipationService 
         }
     }
 
+    @Override
+    @Transactional
+    public void startParticipation(Long businessNo, Long participationNo) {
+        TrialParticipationVO participation = requireBusinessParticipationStatus(
+                businessNo,
+                participationNo,
+                "APPROVED",
+                "참여 승인 상태에서만 참여 시작으로 변경할 수 있습니다.");
+        int updated = trialParticipationDAO.startParticipation(
+                participation.getParticipationNo(), businessNo);
+        if (updated != 1) {
+            throw new IllegalStateException("참여 시작 상태로 변경하지 못했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void completeParticipation(Long businessNo, Long participationNo) {
+        TrialParticipationVO participation = requireBusinessParticipationStatus(
+                businessNo,
+                participationNo,
+                "PARTICIPATING",
+                "참여 중인 내역만 참여 완료로 변경할 수 있습니다.");
+        int updated = trialParticipationDAO.completeParticipation(
+                participation.getParticipationNo(), businessNo);
+        if (updated != 1) {
+            throw new IllegalStateException("참여 완료 상태로 변경하지 못했습니다.");
+        }
+    }
+
     private TrialParticipationVO requireBusinessAppliedParticipation(Long businessNo, Long participationNo) {
         if (businessNo == null) {
             throw new IllegalArgumentException("사업자 정보를 확인할 수 없습니다.");
@@ -174,6 +204,29 @@ public class TrialParticipationServiceImpl implements TrialParticipationService 
         }
         if (!"APPLIED".equals(participation.getStatus())) {
             throw new IllegalArgumentException("검토 대기 상태의 참여 요청만 승인 또는 거절할 수 있습니다.");
+        }
+        return participation;
+    }
+
+    private TrialParticipationVO requireBusinessParticipationStatus(
+            Long businessNo,
+            Long participationNo,
+            String expectedStatus,
+            String invalidStatusMessage) {
+        if (businessNo == null) {
+            throw new IllegalArgumentException("사업자 정보를 확인할 수 없습니다.");
+        }
+        if (participationNo == null) {
+            throw new IllegalArgumentException("처리할 참여 내역을 확인할 수 없습니다.");
+        }
+
+        TrialParticipationVO participation = trialParticipationDAO.selectBusinessParticipation(
+                businessNo, participationNo);
+        if (participation == null) {
+            throw new IllegalArgumentException("해당 사업자의 참여 내역을 찾을 수 없습니다.");
+        }
+        if (!expectedStatus.equals(participation.getStatus())) {
+            throw new IllegalArgumentException(invalidStatusMessage);
         }
         return participation;
     }

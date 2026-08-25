@@ -44,4 +44,12 @@ public interface TrialParticipationDAO {
     int rejectParticipation(
             @Param("participationNo") Long participationNo,
             @Param("businessNo") Long businessNo);
+
+    int startParticipation(
+            @Param("participationNo") Long participationNo,
+            @Param("businessNo") Long businessNo);
+
+    int completeParticipation(
+            @Param("participationNo") Long participationNo,
+            @Param("businessNo") Long businessNo);
 }

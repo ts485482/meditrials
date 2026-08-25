@@ -103,6 +103,8 @@ public class TrialParticipationController {
         model.addAttribute("selectedParticipation", selectedParticipation);
         model.addAttribute("appliedCount", countByStatus(participations, "APPLIED"));
         model.addAttribute("approvedCount", countByStatus(participations, "APPROVED"));
+        model.addAttribute("participatingCount", countByStatus(participations, "PARTICIPATING"));
+        model.addAttribute("completedCount", countByStatus(participations, "COMPLETED"));
         model.addAttribute("rejectedCount", countByStatus(participations, "REJECTED"));
         return "business/participations";
     }
@@ -141,6 +143,47 @@ public class TrialParticipationController {
         try {
             trialParticipationService.rejectParticipation(business.getBusinessNo(), participationNo);
             redirectAttributes.addFlashAttribute("participationNotice", "참여 요청을 거절했습니다.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("participationError", exception.getMessage());
+        }
+        return "redirect:/business/participations?participationNo=" + participationNo;
+    }
+
+
+    @PostMapping("/business/participations/{participationNo}/start")
+    public String startParticipation(
+            @PathVariable Long participationNo,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        BusinessVO business = getLoginBusiness(request);
+        if (business == null) {
+            return "redirect:/business/participations";
+        }
+
+        try {
+            trialParticipationService.startParticipation(business.getBusinessNo(), participationNo);
+            redirectAttributes.addFlashAttribute("participationNotice", "참여 상태를 '참여중'으로 변경했습니다.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("participationError", exception.getMessage());
+        }
+        return "redirect:/business/participations?participationNo=" + participationNo;
+    }
+
+    @PostMapping("/business/participations/{participationNo}/complete")
+    public String completeParticipation(
+            @PathVariable Long participationNo,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        BusinessVO business = getLoginBusiness(request);
+        if (business == null) {
+            return "redirect:/business/participations";
+        }
+
+        try {
+            trialParticipationService.completeParticipation(business.getBusinessNo(), participationNo);
+            redirectAttributes.addFlashAttribute("participationNotice", "임상시험 참여를 완료 상태로 변경했습니다.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             redirectAttributes.addFlashAttribute("participationError", exception.getMessage());
         }
