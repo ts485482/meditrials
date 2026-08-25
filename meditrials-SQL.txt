@@ -7,7 +7,7 @@
 --          favorites, inquiries/participation, premium promotion,
 --          payments, dashboard statistics
 -- Created: 2026-08-21
--- Updated: 2026-08-24
+-- Updated: 2026-08-25
 -- Tables: 17 (PLAN_POLICY 포함)
 -- =============================================================
 
@@ -117,10 +117,11 @@ CREATE TABLE DISEASE (
     CONSTRAINT PK_DISEASE PRIMARY KEY (DISEASE_NO),
     CONSTRAINT UQ_DISEASE_SOURCE_CODE UNIQUE (SOURCE_CODE),
     CONSTRAINT CK_DISEASE_SOURCE
-        CHECK (SOURCE_TYPE IN ('ORPHADATA', 'LOCAL', 'OTHER_API'))
+        CHECK (SOURCE_TYPE IN ('HIRA', 'LOCAL', 'OTHER_API', 'ORPHADATA'))
 );
 
-COMMENT ON TABLE DISEASE IS '희귀·난치질환 기본 정보';
+COMMENT ON TABLE DISEASE IS '난치성·치료 미충족 질환 기본 정보';
+COMMENT ON COLUMN DISEASE.SOURCE_TYPE IS '현재 HIRA 중심. LOCAL / OTHER_API / ORPHADATA(기존 데이터 호환) 허용';
 
 
 -- =============================================================
@@ -752,10 +753,21 @@ SELECT
 FROM TRIAL_PROMOTION P
 JOIN CLINICAL_TRIAL T
   ON T.TRIAL_NO = P.TRIAL_NO
+ AND T.BUSINESS_NO = P.BUSINESS_NO
+JOIN BUSINESS B
+  ON B.BUSINESS_NO = P.BUSINESS_NO
+JOIN BUSINESS_SUBSCRIPTION S
+  ON S.SUBSCRIPTION_NO = P.SUBSCRIPTION_NO
+ AND S.BUSINESS_NO = P.BUSINESS_NO
 WHERE P.STATUS = 'ACTIVE'
-  AND T.REVIEW_STATUS = 'APPROVED'
   AND (P.START_DATE IS NULL OR P.START_DATE <= SYSDATE)
-  AND (P.END_DATE IS NULL OR P.END_DATE >= SYSDATE);
+  AND (P.END_DATE IS NULL OR P.END_DATE >= SYSDATE)
+  AND B.APPROVAL_STATUS = 'APPROVED'
+  AND T.SOURCE_TYPE = 'BUSINESS'
+  AND T.REVIEW_STATUS = 'APPROVED'
+  AND S.PLAN_TYPE = 'PREMIUM'
+  AND S.STATUS = 'ACTIVE'
+  AND (S.END_DATE IS NULL OR S.END_DATE > SYSDATE);
 
 
 -- =============================================================
@@ -784,7 +796,8 @@ SELECT
     (SELECT COUNT(*)
        FROM BUSINESS_SUBSCRIPTION
       WHERE PLAN_TYPE = 'PREMIUM'
-        AND STATUS = 'ACTIVE') AS PREMIUM_BUSINESS_COUNT,
+        AND STATUS = 'ACTIVE'
+        AND (END_DATE IS NULL OR END_DATE > SYSDATE)) AS PREMIUM_BUSINESS_COUNT,
 
     (SELECT NVL(SUM(AMOUNT), 0)
        FROM PAYMENT
@@ -822,6 +835,9 @@ COMMIT;
 -- =============================================================
 -- 22. APPLICATION RULES (DB + SERVICE)
 -- =============================================================
+-- 0) DISEASE.SOURCE_TYPE은 현재 질병정보 동기화에서 'HIRA'를 사용한다.
+--    ORPHADATA는 기존 데이터 호환을 위해 CHECK 값에만 유지한다.
+--
 -- 1) BUSINESS.APPROVAL_STATUS = 'APPROVED' 인 사업자만
 --    자체 임상시험 등록/수정/검수 요청 가능.
 --
