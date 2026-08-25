@@ -115,7 +115,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %> | MediTrials</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/trial.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/trial.css?v=20260825-1431">
 </head>
 <body>
 <%@ include file="/WEB-INF/views/common/header.jsp" %>

@@ -72,6 +72,7 @@
     String selectedStatus = request.getAttribute("selectedStatus") instanceof String value ? value : "ALL";
     String selectedPhase = request.getAttribute("selectedPhase") instanceof String value ? value : "ALL";
     String selectedScope = request.getAttribute("selectedScope") instanceof String value ? value : "DOMESTIC";
+    String selectedSort = request.getAttribute("selectedSort") instanceof String value ? value : "RECOMMENDED";
     Integer apiTotalCount = request.getAttribute("apiTotalCount") instanceof Integer value ? value : null;
     Integer crisTotalCount = request.getAttribute("crisTotalCount") instanceof Integer value ? value : null;
     Integer clinicalTrialsTotalCount = request.getAttribute("clinicalTrialsTotalCount") instanceof Integer value ? value : null;
@@ -119,6 +120,7 @@
     <% } %>
 
     <form class="search-panel trial-search-panel" method="get" action="${pageContext.request.contextPath}/trials">
+      <input type="hidden" name="sort" value="<%= h(selectedSort) %>">
       <div class="filter-row">
         <div class="filter-item trial-keyword-item">
           <label for="trialKeyword">질환명 또는 임상시험명</label>
@@ -161,14 +163,28 @@
 
     <div class="row-between trial-result-head">
       <h2>임상시험 검색 결과</h2>
-      <div class="trial-result-count">
-        현재 <strong><%= trials.size() %></strong>건 표시
-        <% if (domesticScope) { %>
-          <% if (crisTotalCount != null) { %><span>· CRIS <%= crisTotalCount %>건</span><% } %>
-          <% if (clinicalTrialsTotalCount != null) { %><span>· ClinicalTrials.gov 한국 <%= clinicalTrialsTotalCount %>건</span><% } %>
-        <% } else if (apiTotalCount != null) { %>
-          <span>· ClinicalTrials.gov 전체 <%= apiTotalCount %>건</span>
-        <% } %>
+      <div class="trial-result-tools">
+        <div class="trial-result-count">
+          현재 <strong><%= trials.size() %></strong>건 표시
+          <% if (domesticScope) { %>
+            <% if (crisTotalCount != null) { %><span>· CRIS <%= crisTotalCount %>건</span><% } %>
+            <% if (clinicalTrialsTotalCount != null) { %><span>· ClinicalTrials.gov 한국 <%= clinicalTrialsTotalCount %>건</span><% } %>
+          <% } else if (apiTotalCount != null) { %>
+            <span>· ClinicalTrials.gov 전체 <%= apiTotalCount %>건</span>
+          <% } %>
+        </div>
+        <form class="trial-sort-form" method="get" action="${pageContext.request.contextPath}/trials">
+          <input type="hidden" name="keyword" value="<%= h(keyword) %>">
+          <input type="hidden" name="scope" value="<%= h(selectedScope) %>">
+          <input type="hidden" name="status" value="<%= h(selectedStatus) %>">
+          <input type="hidden" name="phase" value="<%= h(selectedPhase) %>">
+          <label for="trialSort">정렬</label>
+          <select id="trialSort" name="sort" class="form-control">
+            <option value="RECOMMENDED" <%= "RECOMMENDED".equals(selectedSort) ? "selected" : "" %>>추천순</option>
+            <option value="DEADLINE" <%= "DEADLINE".equals(selectedSort) ? "selected" : "" %>>모집 종료 임박순</option>
+          </select>
+          <button class="btn btn-outline trial-sort-button" type="submit">적용</button>
+        </form>
       </div>
     </div>
 

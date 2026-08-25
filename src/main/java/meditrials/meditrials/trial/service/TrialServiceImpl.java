@@ -1,5 +1,8 @@
 package meditrials.meditrials.trial.service;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,17 +56,26 @@ public class TrialServiceImpl implements TrialService {
             String keyword,
             String recruitmentStatus,
             String phase,
-            String scope) {
+            String scope,
+            String sort) {
 
         String normalizedKeyword = keyword == null ? "" : keyword.trim();
         String normalizedStatus = normalizeStatus(recruitmentStatus);
         String normalizedPhase = normalizePhase(phase);
         String normalizedScope = normalizeScope(scope);
+        String normalizedSort = normalizeSort(sort);
 
+        TrialSearchResultVO result;
         if (SCOPE_DOMESTIC.equals(normalizedScope)) {
-            return searchDomesticTrials(normalizedKeyword, normalizedStatus, normalizedPhase);
+            result = searchDomesticTrials(normalizedKeyword, normalizedStatus, normalizedPhase);
+        } else {
+            result = searchGlobalTrials(normalizedKeyword, normalizedStatus, normalizedPhase);
         }
-        return searchGlobalTrials(normalizedKeyword, normalizedStatus, normalizedPhase);
+
+        List<TrialVO> sortedTrials = applySort(result.getTrials(), normalizedSort);
+        result.setTrials(sortedTrials);
+        result.setDisplayedCount(sortedTrials.size());
+        return result;
     }
 
     @Override
@@ -563,6 +575,86 @@ public class TrialServiceImpl implements TrialService {
         return value != null && value.trim().toUpperCase(Locale.ROOT).startsWith("KCT");
     }
 
+
+    private List<TrialVO> applySort(List<TrialVO> trials, String sort) {
+        if (trials == null || trials.size() < 2 || !"DEADLINE".equals(sort)) {
+            return trials == null ? new ArrayList<>() : trials;
+        }
+
+        List<TrialVO> sorted = new ArrayList<>(trials);
+        LocalDate today = LocalDate.now();
+        sorted.sort((left, right) -> compareByDeadline(left, right, today));
+        return sorted;
+    }
+
+    private int compareByDeadline(TrialVO left, TrialVO right, LocalDate today) {
+        LocalDate leftDate = parseCompletionDate(left == null ? null : left.getCompletionDateText());
+        LocalDate rightDate = parseCompletionDate(right == null ? null : right.getCompletionDateText());
+
+        int leftGroup = deadlineGroup(left, leftDate, today);
+        int rightGroup = deadlineGroup(right, rightDate, today);
+        if (leftGroup != rightGroup) {
+            return Integer.compare(leftGroup, rightGroup);
+        }
+
+        if (leftGroup == 0 && leftDate != null && rightDate != null) {
+            return leftDate.compareTo(rightDate);
+        }
+        if ((leftGroup == 2 || leftGroup == 3) && leftDate != null && rightDate != null) {
+            return rightDate.compareTo(leftDate);
+        }
+        if (leftDate == null && rightDate != null) {
+            return 1;
+        }
+        if (leftDate != null && rightDate == null) {
+            return -1;
+        }
+        return 0;
+    }
+
+    private int deadlineGroup(TrialVO trial, LocalDate completionDate, LocalDate today) {
+        if (isRecruitmentOpen(trial)) {
+            if (completionDate != null && !completionDate.isBefore(today)) {
+                return 0;
+            }
+            if (completionDate == null) {
+                return 1;
+            }
+            return 2;
+        }
+        return 3;
+    }
+
+    private boolean isRecruitmentOpen(TrialVO trial) {
+        if (trial == null || trial.getRecruitmentStatus() == null) {
+            return false;
+        }
+        String status = trial.getRecruitmentStatus().trim().toUpperCase(Locale.ROOT);
+        return "RECRUITING".equals(status) || "NOT_YET_RECRUITING".equals(status);
+    }
+
+    private LocalDate parseCompletionDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        try {
+            if (normalized.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
+                return LocalDate.parse(normalized.substring(0, 10));
+            }
+            if (normalized.matches("\\d{4}-\\d{2}")) {
+                return YearMonth.parse(normalized).atEndOfMonth();
+            }
+            if (normalized.matches("\\d{4}")) {
+                return LocalDate.of(Integer.parseInt(normalized), 12, 31);
+            }
+        } catch (DateTimeParseException | NumberFormatException exception) {
+            return null;
+        }
+        return null;
+    }
+
     private String normalizeStatus(String value) {
         if (value == null) {
             return "ALL";
@@ -591,5 +683,13 @@ public class TrialServiceImpl implements TrialService {
         }
         String normalized = value.trim().toUpperCase(Locale.ROOT);
         return "GLOBAL".equals(normalized) ? "GLOBAL" : SCOPE_DOMESTIC;
+    }
+
+    private String normalizeSort(String value) {
+        if (value == null) {
+            return "RECOMMENDED";
+        }
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        return "DEADLINE".equals(normalized) ? "DEADLINE" : "RECOMMENDED";
     }
 }

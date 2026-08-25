@@ -43,6 +43,10 @@ public class TrialController {
             "DOMESTIC",
             "GLOBAL");
 
+    private static final Set<String> ALLOWED_SORTS = Set.of(
+            "RECOMMENDED",
+            "DEADLINE");
+
     private final TrialService trialService;
     private final FavoriteService favoriteService;
     private final TrialParticipationService trialParticipationService;
@@ -62,17 +66,20 @@ public class TrialController {
             @RequestParam(name = "status", defaultValue = "ALL") String status,
             @RequestParam(name = "phase", defaultValue = "ALL") String phase,
             @RequestParam(name = "scope", defaultValue = "DOMESTIC") String scope,
+            @RequestParam(name = "sort", defaultValue = "RECOMMENDED") String sort,
             @RequestParam(name = "notFound", defaultValue = "false") boolean notFound,
             Model model) {
 
         String normalizedStatus = normalize(status, ALLOWED_STATUSES, "ALL");
         String normalizedPhase = normalize(phase, ALLOWED_PHASES, "ALL");
         String normalizedScope = normalize(scope, ALLOWED_SCOPES, "DOMESTIC");
+        String normalizedSort = normalize(sort, ALLOWED_SORTS, "RECOMMENDED");
         TrialSearchResultVO result = trialService.searchTrials(
                 keyword,
                 normalizedStatus,
                 normalizedPhase,
-                normalizedScope);
+                normalizedScope,
+                normalizedSort);
 
         model.addAttribute("trials", result.getTrials());
         model.addAttribute("displayedCount", result.getDisplayedCount());
@@ -86,6 +93,7 @@ public class TrialController {
         model.addAttribute("selectedStatus", normalizedStatus);
         model.addAttribute("selectedPhase", normalizedPhase);
         model.addAttribute("selectedScope", normalizedScope);
+        model.addAttribute("selectedSort", normalizedSort);
         if (notFound) {
             model.addAttribute("pageNotice", "요청한 임상시험 정보를 찾을 수 없습니다.");
         }
