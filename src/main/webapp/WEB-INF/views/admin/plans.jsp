@@ -61,7 +61,7 @@
         <div class="price">₩<%= money(freeFee) %></div>
         <ul>
           <li>임상시험 등록/수정</li>
-          <li>참여문의 확인/답변</li>
+          <li>문의 확인/답변</li>
           <li>기본 모집상태 관리</li>
         </ul>
         <div class="notice" style="margin-top:18px;">FREE 요금제는 기본 제공 정책으로 월 이용료가 발생하지 않습니다.</div>

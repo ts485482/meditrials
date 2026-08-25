@@ -10,7 +10,8 @@ import meditrials.meditrials.common.constant.SessionConstants;
 /** 사업자 공통 사이드바에 현재 PREMIUM 활성 여부를 제공한다. */
 @ControllerAdvice(basePackages = {
         "meditrials.meditrials.business",
-        "meditrials.meditrials.inquiry"
+        "meditrials.meditrials.inquiry",
+        "meditrials.meditrials.participation"
 })
 public class BusinessNavigationAdvice {
 

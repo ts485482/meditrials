@@ -67,14 +67,16 @@ public class RoleAccessInterceptor implements HandlerInterceptor {
         if (requestPath.startsWith("/business")) {
             return ROLE_BUSINESS;
         }
-        if (requestPath.startsWith("/mypage") || isTrialInquiryPath(requestPath)) {
+        if (requestPath.startsWith("/mypage") || isTrialUserActionPath(requestPath)) {
             return ROLE_USER;
         }
         return null;
     }
 
-    private boolean isTrialInquiryPath(String requestPath) {
-        return requestPath.startsWith("/trials/") && requestPath.contains("/inquiries/");
+    private boolean isTrialUserActionPath(String requestPath) {
+        return requestPath.startsWith("/trials/")
+                && (requestPath.contains("/inquiries/")
+                    || requestPath.contains("/participations/"));
     }
 
     private void redirectToRoleHome(

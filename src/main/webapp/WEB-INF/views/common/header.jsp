@@ -20,7 +20,7 @@
     <nav class="mt-nav" aria-label="주요 메뉴">
       <a href="${pageContext.request.contextPath}/diseases">질환정보</a>
       <a href="${pageContext.request.contextPath}/trials">임상시험 검색</a>
-      <a href="${pageContext.request.contextPath}/mypage/inquiries">참여문의</a>
+      <a href="${pageContext.request.contextPath}/mypage/inquiries">문의내역</a>
       <a href="${pageContext.request.contextPath}/support">고객센터</a>
     </nav>
 

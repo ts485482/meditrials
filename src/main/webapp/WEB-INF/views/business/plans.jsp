@@ -94,7 +94,7 @@
         <div class="price">₩0</div>
         <ul>
           <li>임상시험 등록/수정</li>
-          <li>참여문의 확인/답변</li>
+          <li>문의 확인/답변</li>
           <li>기본 모집상태 관리</li>
         </ul>
       </div>

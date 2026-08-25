@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="meditrials.meditrials.participation.dao.TrialParticipationDAO">
+
+    <resultMap id="trialParticipationResultMap"
+               type="meditrials.meditrials.participation.vo.TrialParticipationVO">
+        <id property="participationNo" column="PARTICIPATION_NO"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="trialNo" column="TRIAL_NO"/>
+        <result property="businessNo" column="BUSINESS_NO"/>
+        <result property="status" column="STATUS"/>
+        <result property="appliedAt" column="APPLIED_AT"/>
+        <result property="approvedAt" column="APPROVED_AT"/>
+        <result property="startedAt" column="STARTED_AT"/>
+        <result property="completedAt" column="COMPLETED_AT"/>
+        <result property="trialTitle" column="TRIAL_TITLE"/>
+        <result property="recruitmentStatus" column="RECRUITMENT_STATUS"/>
+        <result property="institutionName" column="INSTITUTION_NAME"/>
+        <result property="memberName" column="MEMBER_NAME"/>
+        <result property="memberEmail" column="MEMBER_EMAIL"/>
+        <result property="businessOrgName" column="BUSINESS_ORG_NAME"/>
+    </resultMap>
+
+    <insert id="insertParticipation" parameterType="meditrials.meditrials.participation.vo.TrialParticipationVO">
+        <selectKey keyProperty="participationNo" resultType="long" order="BEFORE">
+            SELECT SEQ_TRIAL_PARTICIPATION.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TRIAL_PARTICIPATION (
+            PARTICIPATION_NO,
+            MEMBER_NO,
+            TRIAL_NO,
+            BUSINESS_NO,
+            STATUS,
+            APPLIED_AT,
+            APPROVED_AT,
+            STARTED_AT,
+            COMPLETED_AT
+        ) VALUES (
+            #{participationNo,jdbcType=NUMERIC},
+            #{memberNo,jdbcType=NUMERIC},
+            #{trialNo,jdbcType=NUMERIC},
+            #{businessNo,jdbcType=NUMERIC},
+            'APPLIED',
+            SYSDATE,
+            NULL,
+            NULL,
+            NULL
+        )
+    </insert>
+
+    <select id="selectMemberTrialParticipation" resultMap="trialParticipationResultMap">
+        SELECT
+            P.PARTICIPATION_NO,
+            P.MEMBER_NO,
+            P.TRIAL_NO,
+            P.BUSINESS_NO,
+            P.STATUS,
+            P.APPLIED_AT,
+            P.APPROVED_AT,
+            P.STARTED_AT,
+            P.COMPLETED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.INSTITUTION_NAME,
+            B.ORG_NAME AS BUSINESS_ORG_NAME
+          FROM TRIAL_PARTICIPATION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          LEFT JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+         WHERE P.MEMBER_NO = #{memberNo}
+           AND P.TRIAL_NO = #{trialNo}
+    </select>
+
+    <select id="selectMemberParticipation" resultMap="trialParticipationResultMap">
+        SELECT
+            P.PARTICIPATION_NO,
+            P.MEMBER_NO,
+            P.TRIAL_NO,
+            P.BUSINESS_NO,
+            P.STATUS,
+            P.APPLIED_AT,
+            P.APPROVED_AT,
+            P.STARTED_AT,
+            P.COMPLETED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.INSTITUTION_NAME,
+            B.ORG_NAME AS BUSINESS_ORG_NAME
+          FROM TRIAL_PARTICIPATION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          LEFT JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+         WHERE P.MEMBER_NO = #{memberNo}
+           AND P.PARTICIPATION_NO = #{participationNo}
+    </select>
+
+    <select id="selectMemberParticipations" resultMap="trialParticipationResultMap">
+        SELECT
+            P.PARTICIPATION_NO,
+            P.MEMBER_NO,
+            P.TRIAL_NO,
+            P.BUSINESS_NO,
+            P.STATUS,
+            P.APPLIED_AT,
+            P.APPROVED_AT,
+            P.STARTED_AT,
+            P.COMPLETED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.INSTITUTION_NAME,
+            B.ORG_NAME AS BUSINESS_ORG_NAME
+          FROM TRIAL_PARTICIPATION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          LEFT JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+         WHERE P.MEMBER_NO = #{memberNo}
+         ORDER BY P.APPLIED_AT DESC, P.PARTICIPATION_NO DESC
+    </select>
+
+    <select id="selectBusinessParticipation" resultMap="trialParticipationResultMap">
+        SELECT
+            P.PARTICIPATION_NO,
+            P.MEMBER_NO,
+            P.TRIAL_NO,
+            P.BUSINESS_NO,
+            P.STATUS,
+            P.APPLIED_AT,
+            P.APPROVED_AT,
+            P.STARTED_AT,
+            P.COMPLETED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.INSTITUTION_NAME,
+            M.MEMBER_NAME,
+            M.EMAIL AS MEMBER_EMAIL,
+            B.ORG_NAME AS BUSINESS_ORG_NAME
+          FROM TRIAL_PARTICIPATION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          JOIN MEMBER M
+            ON M.MEMBER_NO = P.MEMBER_NO
+          LEFT JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+         WHERE P.BUSINESS_NO = #{businessNo}
+           AND P.PARTICIPATION_NO = #{participationNo}
+    </select>
+
+    <select id="selectBusinessParticipations" resultMap="trialParticipationResultMap">
+        SELECT
+            P.PARTICIPATION_NO,
+            P.MEMBER_NO,
+            P.TRIAL_NO,
+            P.BUSINESS_NO,
+            P.STATUS,
+            P.APPLIED_AT,
+            P.APPROVED_AT,
+            P.STARTED_AT,
+            P.COMPLETED_AT,
+            T.TITLE AS TRIAL_TITLE,
+            T.RECRUITMENT_STATUS,
+            T.INSTITUTION_NAME,
+            M.MEMBER_NAME,
+            M.EMAIL AS MEMBER_EMAIL,
+            B.ORG_NAME AS BUSINESS_ORG_NAME
+          FROM TRIAL_PARTICIPATION P
+          JOIN CLINICAL_TRIAL T
+            ON T.TRIAL_NO = P.TRIAL_NO
+          JOIN MEMBER M
+            ON M.MEMBER_NO = P.MEMBER_NO
+          LEFT JOIN BUSINESS B
+            ON B.BUSINESS_NO = P.BUSINESS_NO
+         WHERE P.BUSINESS_NO = #{businessNo}
+         ORDER BY
+            CASE P.STATUS
+                WHEN 'APPLIED' THEN 0
+                WHEN 'APPROVED' THEN 1
+                WHEN 'PARTICIPATING' THEN 2
+                WHEN 'COMPLETED' THEN 3
+                WHEN 'REJECTED' THEN 4
+                ELSE 5
+            END,
+            P.APPLIED_AT DESC,
+            P.PARTICIPATION_NO DESC
+    </select>
+
+    <update id="reapplyParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET BUSINESS_NO = #{businessNo},
+               STATUS = 'APPLIED',
+               APPLIED_AT = SYSDATE,
+               APPROVED_AT = NULL,
+               STARTED_AT = NULL,
+               COMPLETED_AT = NULL
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND MEMBER_NO = #{memberNo}
+           AND STATUS IN ('REJECTED', 'WITHDRAWN')
+    </update>
+
+    <update id="withdrawParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET STATUS = 'WITHDRAWN'
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND MEMBER_NO = #{memberNo}
+           AND STATUS = 'APPLIED'
+    </update>
+
+    <update id="approveParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET STATUS = 'APPROVED',
+               APPROVED_AT = SYSDATE
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND BUSINESS_NO = #{businessNo}
+           AND STATUS = 'APPLIED'
+    </update>
+
+    <update id="rejectParticipation">
+        UPDATE TRIAL_PARTICIPATION
+           SET STATUS = 'REJECTED',
+               APPROVED_AT = NULL
+         WHERE PARTICIPATION_NO = #{participationNo}
+           AND BUSINESS_NO = #{businessNo}
+           AND STATUS = 'APPLIED'
+    </update>
+
+</mapper>

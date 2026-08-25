@@ -115,7 +115,7 @@ public class TrialInquiryController {
         model.addAttribute("inquiries", inquiries);
         model.addAttribute("selectedInquiry", selectedInquiry);
         if (created) {
-            model.addAttribute("pageNotice", "참여 문의가 등록되었습니다.");
+            model.addAttribute("pageNotice", "문의가 등록되었습니다.");
         }
         return "mypage/inquiries";
     }

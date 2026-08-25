@@ -22,7 +22,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/mypage/**",
                         "/business/**",
                         "/admin/**",
-                        "/trials/*/inquiries/**")
+                        "/trials/*/inquiries/**",
+                        "/trials/*/participations/**")
                 .excludePathPatterns(
                         "/business/signup",
                         "/business/check-registration-no");

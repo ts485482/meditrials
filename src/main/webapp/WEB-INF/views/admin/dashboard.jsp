@@ -69,7 +69,7 @@
         <strong><%= number(dashboard.getTrialCount()) %>건</strong>
       </div>
       <div class="stat-card">
-        <span>참여 문의</span>
+        <span>문의</span>
         <strong><%= number(dashboard.getInquiryCount()) %>건</strong>
       </div>
       <div class="stat-card">

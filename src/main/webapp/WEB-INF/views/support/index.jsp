@@ -59,8 +59,8 @@
       </div>
       <div class="faq-list">
         <details>
-          <summary>임상시험 참여 문의는 어디에서 작성하나요?</summary>
-          <p>관리자가 승인한 MediTrials 자체 등록 임상시험 상세 화면에서 <strong>참여 문의</strong> 버튼을 이용할 수 있습니다. 외부 API 임상시험은 공식 상세 페이지에서 기관 연락처와 참여 정보를 확인해주세요.</p>
+          <summary>임상시험 문의와 참여 요청은 어떻게 다른가요?</summary>
+          <p>관리자가 승인한 MediTrials 자체 등록 임상시험에서는 <strong>문의하기</strong>로 조건·일정 등을 질문하고, <strong>참여 요청</strong>으로 실제 참여 의사를 전달할 수 있습니다. 외부 API 임상시험은 공식 상세 페이지에서 기관 연락처와 참여 정보를 확인해주세요.</p>
         </details>
         <details>
           <summary>관심 질환과 관심 임상시험은 어디에서 확인하나요?</summary>

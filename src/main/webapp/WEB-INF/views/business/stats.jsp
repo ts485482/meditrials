@@ -60,7 +60,7 @@
     <div class="stat-grid">
       <div class="stat-card"><span>조회수</span><strong><%= number(stats.getViewCount()) %></strong></div>
       <div class="stat-card"><span>관심등록</span><strong><%= number(stats.getFavoriteCount()) %></strong></div>
-      <div class="stat-card"><span>참여문의</span><strong><%= number(stats.getInquiryCount()) %></strong></div>
+      <div class="stat-card"><span>문의</span><strong><%= number(stats.getInquiryCount()) %></strong></div>
       <div class="stat-card"><span>참여확정</span><strong><%= number(stats.getParticipantCount()) %></strong></div>
     </div>
 

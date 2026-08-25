@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import meditrials.meditrials.common.constant.SessionConstants;
 import meditrials.meditrials.favorite.service.FavoriteService;
+import meditrials.meditrials.participation.service.TrialParticipationService;
 import meditrials.meditrials.trial.service.TrialService;
 import meditrials.meditrials.trial.vo.TrialSearchResultVO;
 import meditrials.meditrials.trial.vo.TrialVO;
@@ -44,10 +45,15 @@ public class TrialController {
 
     private final TrialService trialService;
     private final FavoriteService favoriteService;
+    private final TrialParticipationService trialParticipationService;
 
-    public TrialController(TrialService trialService, FavoriteService favoriteService) {
+    public TrialController(
+            TrialService trialService,
+            FavoriteService favoriteService,
+            TrialParticipationService trialParticipationService) {
         this.trialService = trialService;
         this.favoriteService = favoriteService;
+        this.trialParticipationService = trialParticipationService;
     }
 
     @GetMapping
@@ -104,6 +110,9 @@ public class TrialController {
         model.addAttribute(
                 "favoriteTrial",
                 favoriteService.isTrialFavorite(loginUserMemberNo, trialNo));
+        model.addAttribute(
+                "participation",
+                trialParticipationService.getMemberTrialParticipation(loginUserMemberNo, trialNo));
         return "trial/detail";
     }
 

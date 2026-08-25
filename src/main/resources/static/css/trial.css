@@ -61,3 +61,8 @@
 .trial-contact-actions form{display:block;width:100%;margin:0}
 .trial-contact-actions .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;margin:0;box-sizing:border-box;text-align:center;line-height:1.35}
 .trial-action-notice{margin-top:18px;padding:11px 12px;border:1px solid #f0ddb1;border-radius:8px;background:#fff9ea;color:#81611d;font-size:12px;line-height:1.6}
+
+.trial-action-success{border-color:#c7eadc;background:#ebfaf4;color:#176f53}
+.trial-action-error{border-color:#f3c9cd;background:#fff1f2;color:#a83b45}
+.trial-action-guide{padding:10px 12px;border-radius:8px;background:#f7f9fc;color:#66788d;font-size:11px;line-height:1.55}
+.trial-action-guide strong{color:#173f79}

@@ -51,8 +51,8 @@
   <main class="dashboard-main">
     <div class="dashboard-head inquiry-page-head">
       <div>
-        <h1>참여 문의 관리</h1>
-        <p class="text-muted">내 기관이 등록한 임상시험에 접수된 사용자 문의를 확인하고 답변할 수 있습니다.</p>
+        <h1>문의 관리</h1>
+        <p class="text-muted">내 기관이 등록한 임상시험에 접수된 질문을 확인하고 답변할 수 있습니다. 실제 참여 요청은 ‘참여 관리’에서 별도로 처리합니다.</p>
       </div>
     </div>
 
@@ -80,12 +80,12 @@
 
     <% if (inquiries.isEmpty()) { %>
       <div class="empty-state inquiry-empty-state">
-        <h3>접수된 참여 문의가 없습니다.</h3>
+        <h3>접수된 문의가 없습니다.</h3>
         <p class="text-muted">사업자가 등록한 임상시험에 사용자가 문의를 남기면 이곳에 표시됩니다.</p>
       </div>
     <% } else { %>
       <div class="inquiry-history-layout business-inquiry-layout">
-        <section class="inquiry-history-list" aria-label="사업자 참여 문의 목록">
+        <section class="inquiry-history-list" aria-label="사업자 문의 목록">
           <% for (TrialInquiryVO inquiry : inquiries) { %>
             <a
                 class="inquiry-history-item <%= selectedInquiry != null && inquiry.getInquiryNo().equals(selectedInquiry.getInquiryNo()) ? "active" : "" %>"

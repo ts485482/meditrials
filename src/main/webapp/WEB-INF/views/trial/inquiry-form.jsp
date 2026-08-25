@@ -41,7 +41,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>임상시험 참여 문의 | MediTrials</title>
+  <title>임상시험 문의 | MediTrials</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/inquiry.css">
 </head>
@@ -50,7 +50,7 @@
   <%@ include file="/WEB-INF/views/common/sidebar-user.jsp" %>
   <main class="dashboard-main">
     <div class="dashboard-head">
-      <h1>임상시험 참여 문의</h1>
+      <h1>임상시험 문의</h1>
     </div>
 
     <div class="inquiry-form-card">
@@ -101,7 +101,7 @@
                 id="question"
                 name="question"
                 required
-                placeholder="참여 조건, 일정, 방문 기관 등에 대해 문의할 내용을 작성해주세요."><%= h(question) %></textarea>
+                placeholder="참여 조건, 일정, 방문 기관 등 궁금한 내용을 작성해주세요."><%= h(question) %></textarea>
           </div>
 
           <label class="inquiry-consent" for="privacyAgreed">

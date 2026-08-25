@@ -66,7 +66,7 @@
       <div>
         <h1>마이페이지</h1>
         <p class="text-muted">
-          <%= member == null ? "내 관심정보와 참여 문의를 확인합니다." : h(member.getMemberName()) + "님의 관심정보와 참여 문의를 확인합니다." %>
+          <%= member == null ? "내 관심정보와 문의 내역을 확인합니다." : h(member.getMemberName()) + "님의 관심정보와 문의 내역을 확인합니다." %>
         </p>
       </div>
       <a class="btn btn-outline" href="${pageContext.request.contextPath}/mypage/profile">회원정보 수정</a>
@@ -80,7 +80,7 @@
         <span>관심 임상시험</span><strong><%= summary.getFavoriteTrialCount() %></strong>
       </a>
       <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/inquiries">
-        <span>참여 문의</span><strong><%= summary.getInquiryCount() %></strong>
+        <span>문의</span><strong><%= summary.getInquiryCount() %></strong>
       </a>
       <a class="stat-card mypage-stat-card" href="${pageContext.request.contextPath}/mypage/inquiries">
         <span>답변 완료</span><strong><%= summary.getAnsweredInquiryCount() %></strong>
@@ -137,11 +137,11 @@
 
       <section class="table-card mypage-preview-card">
         <div class="mypage-card-head">
-          <h3>최근 참여 문의</h3>
+          <h3>최근 문의</h3>
           <a href="${pageContext.request.contextPath}/mypage/inquiries">전체 보기</a>
         </div>
         <% if (recentInquiries.isEmpty()) { %>
-          <div class="mypage-empty">등록한 참여 문의가 없습니다.</div>
+          <div class="mypage-empty">등록한 문의가 없습니다.</div>
         <% } else { %>
           <ul class="list-clean mypage-preview-list">
             <% for (MypageRecentItemVO item : recentInquiries) { %>

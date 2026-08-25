@@ -6,7 +6,8 @@
     <a href="${pageContext.request.contextPath}/mypage">마이페이지</a>
     <a href="${pageContext.request.contextPath}/mypage/favorites?tab=diseases">관심 질환</a>
     <a href="${pageContext.request.contextPath}/mypage/favorites?tab=trials">관심 임상시험</a>
-    <a href="${pageContext.request.contextPath}/mypage/inquiries">참여 문의 내역</a>
+    <a href="${pageContext.request.contextPath}/mypage/inquiries">문의 내역</a>
+    <a href="${pageContext.request.contextPath}/mypage/participations">참여 요청 내역</a>
     <a href="${pageContext.request.contextPath}/mypage/profile">회원정보 수정</a>
     <a href="${pageContext.request.contextPath}/mypage/password">비밀번호 변경</a>
   </nav>

@@ -9,6 +9,7 @@
     <a href="${pageContext.request.contextPath}/business">대시보드</a>
     <a href="${pageContext.request.contextPath}/business/trials">임상시험 관리</a>
     <a href="${pageContext.request.contextPath}/business/inquiries">문의 관리</a>
+    <a href="${pageContext.request.contextPath}/business/participations">참여 관리</a>
     <a href="${pageContext.request.contextPath}/business/plans">요금제/프리미엄</a>
     <% if (sidebarPremiumActive) { %>
       <a href="${pageContext.request.contextPath}/business/stats">통계</a>

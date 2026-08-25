@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="meditrials.meditrials.trial.vo.TrialVO" %>
+<%@ page import="meditrials.meditrials.participation.vo.TrialParticipationVO" %>
 <%@ page import="org.springframework.web.util.HtmlUtils" %>
 <%!
     private String h(String value) {
@@ -54,6 +55,17 @@
         return trial != null && "BUSINESS".equalsIgnoreCase(trial.getSourceType());
     }
 
+
+    private String participationStatusLabel(String status) {
+        if ("APPLIED".equals(status)) return "참여 요청 검토중";
+        if ("APPROVED".equals(status)) return "참여 승인됨";
+        if ("PARTICIPATING".equals(status)) return "참여중";
+        if ("COMPLETED".equals(status)) return "참여완료";
+        if ("REJECTED".equals(status)) return "참여 요청 거절";
+        if ("WITHDRAWN".equals(status)) return "참여 요청 취소";
+        return "참여 상태 확인";
+    }
+
     private String sexLabel(String value) {
         if ("ALL".equals(value)) return "모든 성별";
         if ("MALE".equals(value)) return "남성";
@@ -73,11 +85,18 @@
             ? "MediTrials 사업자 등록"
             : (cris ? "질병관리청 CRIS" : "ClinicalTrials.gov");
     boolean favoriteTrial = Boolean.TRUE.equals(request.getAttribute("favoriteTrial"));
+    TrialParticipationVO participation = request.getAttribute("participation") instanceof TrialParticipationVO value
+            ? value : null;
     boolean inquiryAvailable = businessTrial
             && trial != null
             && "APPROVED".equalsIgnoreCase(trial.getReviewStatus())
             && trial.getBusinessNo() != null;
     boolean inquiryUnavailable = "true".equalsIgnoreCase(request.getParameter("inquiryUnavailable"));
+    boolean participationAvailable = inquiryAvailable
+            && trial != null
+            && "RECRUITING".equalsIgnoreCase(trial.getRecruitmentStatus());
+    String participationNotice = request.getAttribute("participationNotice") instanceof String value ? value : null;
+    String participationError = request.getAttribute("participationError") instanceof String value ? value : null;
     Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
     boolean loginUser = "USER".equals(loginRoleValue);
     boolean loggedIn = loginRoleValue != null;
@@ -175,7 +194,13 @@
         <% } %>
 
         <% if (inquiryUnavailable) { %>
-          <div class="trial-action-notice">외부 등록 임상시험은 MediTrials 참여 문의 대상이 아닙니다. 공식 등록 페이지에서 상세정보와 참여 방법을 확인해주세요.</div>
+          <div class="trial-action-notice">외부 등록 임상시험은 MediTrials 직접 문의 대상이 아닙니다. 공식 등록 페이지에서 상세정보와 참여 방법을 확인해주세요.</div>
+        <% } %>
+        <% if (participationNotice != null && !participationNotice.isBlank()) { %>
+          <div class="trial-action-notice trial-action-success"><%= h(participationNotice) %></div>
+        <% } %>
+        <% if (participationError != null && !participationError.isBlank()) { %>
+          <div class="trial-action-notice trial-action-error"><%= h(participationError) %></div>
         <% } %>
 
         <div class="trial-contact-actions">
@@ -192,7 +217,37 @@
           <% } %>
 
           <% if (inquiryAvailable) { %>
-            <a class="btn btn-primary w-100" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/inquiries/new">참여 문의</a>
+            <% if (loginUser) { %>
+              <a class="btn btn-outline w-100" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/inquiries/new">문의하기</a>
+            <% } else if (!loggedIn) { %>
+              <a class="btn btn-outline w-100" href="${pageContext.request.contextPath}/login?required=true">문의하기</a>
+            <% } else { %>
+              <button class="btn btn-outline w-100" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">문의하기</button>
+            <% } %>
+
+            <% if (loginUser) { %>
+              <% if (participation == null && participationAvailable) { %>
+                <form method="post" action="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/participations/request" onsubmit="return confirm('이 임상시험에 실제 참여 요청을 등록하시겠습니까?');">
+                  <button class="btn btn-primary w-100" type="submit">참여 요청</button>
+                </form>
+              <% } else if (participation != null && ("REJECTED".equals(participation.getStatus()) || "WITHDRAWN".equals(participation.getStatus())) && participationAvailable) { %>
+                <form method="post" action="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/participations/request" onsubmit="return confirm('이 임상시험에 다시 참여 요청을 등록하시겠습니까?');">
+                  <button class="btn btn-primary w-100" type="submit">다시 참여 요청</button>
+                </form>
+              <% } else if (participation != null) { %>
+                <a class="btn btn-light w-100" href="${pageContext.request.contextPath}/mypage/participations?participationNo=<%= participation.getParticipationNo() %>"><%= h(participationStatusLabel(participation.getStatus())) %></a>
+              <% } else { %>
+                <button class="btn btn-light w-100" type="button" disabled>현재 참여 요청 불가</button>
+              <% } %>
+            <% } else if (!loggedIn) { %>
+              <a class="btn btn-primary w-100" href="${pageContext.request.contextPath}/login?required=true">참여 요청</a>
+            <% } else { %>
+              <button class="btn btn-light w-100" type="button" disabled title="일반 사용자 계정에서 이용할 수 있습니다.">참여 요청</button>
+            <% } %>
+
+            <div class="trial-action-guide">
+              <strong>문의하기</strong>는 조건·일정 등에 대한 질문이며, <strong>참여 요청</strong>은 실제 참여 의사를 사업자에게 전달하는 기능입니다.
+            </div>
           <% } else if (cris) { %>
             <a class="btn btn-primary w-100" href="https://cris.nih.go.kr" target="_blank" rel="noopener noreferrer">CRIS 공식 상세정보 확인 ↗</a>
           <% } else if (!businessTrial && trial != null && trial.getNctId() != null && !trial.getNctId().isBlank()) { %>

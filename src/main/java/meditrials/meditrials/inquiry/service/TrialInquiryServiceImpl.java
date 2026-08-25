@@ -55,7 +55,7 @@ public class TrialInquiryServiceImpl implements TrialInquiryService {
         if (!"BUSINESS".equalsIgnoreCase(trial.getSourceType())
                 || !"APPROVED".equalsIgnoreCase(trial.getReviewStatus())
                 || trial.getBusinessNo() == null) {
-            throw new IllegalArgumentException("MediTrials에서 승인된 사업자 임상시험에만 참여 문의를 등록할 수 있습니다.");
+            throw new IllegalArgumentException("MediTrials에서 승인된 사업자 임상시험에만 문의를 등록할 수 있습니다.");
         }
 
         TrialInquiryVO inquiry = new TrialInquiryVO();
@@ -68,7 +68,7 @@ public class TrialInquiryServiceImpl implements TrialInquiryService {
 
         int inserted = trialInquiryDAO.insertInquiry(inquiry);
         if (inserted != 1 || inquiry.getInquiryNo() == null) {
-            throw new IllegalStateException("참여 문의를 저장하지 못했습니다.");
+            throw new IllegalStateException("문의를 저장하지 못했습니다.");
         }
         return inquiry.getInquiryNo();
     }

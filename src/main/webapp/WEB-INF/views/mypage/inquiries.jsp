@@ -40,7 +40,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>참여 문의 내역 | MediTrials</title>
+  <title>문의 내역 | MediTrials</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/meditrials.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/css/inquiry.css">
 </head>
@@ -50,8 +50,8 @@
   <main class="dashboard-main">
     <div class="dashboard-head inquiry-page-head">
       <div>
-        <h1>참여 문의 내역</h1>
-        <p class="text-muted">내가 등록한 임상시험 참여 문의와 답변 상태를 확인할 수 있습니다.</p>
+        <h1>문의 내역</h1>
+        <p class="text-muted">내가 등록한 임상시험 문의와 사업자 답변 상태를 확인할 수 있습니다.</p>
       </div>
       <a class="btn btn-primary" href="${pageContext.request.contextPath}/trials">임상시험 검색</a>
     </div>
@@ -62,13 +62,13 @@
 
     <% if (inquiries.isEmpty()) { %>
       <div class="empty-state inquiry-empty-state">
-        <h3>등록한 참여 문의가 없습니다.</h3>
-        <p class="text-muted">임상시험 상세 화면에서 참여 문의를 등록하면 이곳에서 확인할 수 있습니다.</p>
+        <h3>등록한 문의가 없습니다.</h3>
+        <p class="text-muted">임상시험 상세 화면에서 문의하기를 이용하면 이곳에서 확인할 수 있습니다.</p>
         <a class="btn btn-primary" href="${pageContext.request.contextPath}/trials">임상시험 찾아보기</a>
       </div>
     <% } else { %>
       <div class="inquiry-history-layout">
-        <section class="inquiry-history-list" aria-label="참여 문의 목록">
+        <section class="inquiry-history-list" aria-label="문의 목록">
           <% for (TrialInquiryVO inquiry : inquiries) { %>
             <a
                 class="inquiry-history-item <%= selectedInquiry != null && inquiry.getInquiryNo().equals(selectedInquiry.getInquiryNo()) ? "active" : "" %>"
