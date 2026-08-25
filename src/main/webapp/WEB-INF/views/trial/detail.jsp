@@ -97,6 +97,13 @@
             && "RECRUITING".equalsIgnoreCase(trial.getRecruitmentStatus());
     String participationNotice = request.getAttribute("participationNotice") instanceof String value ? value : null;
     String participationError = request.getAttribute("participationError") instanceof String value ? value : null;
+    String inquiryNotice = request.getAttribute("inquiryNotice") instanceof String value ? value : null;
+    String inquiryError = request.getAttribute("inquiryError") instanceof String value ? value : null;
+    String inquirySubject = request.getAttribute("inquirySubject") instanceof String value ? value : "";
+    String inquiryQuestion = request.getAttribute("inquiryQuestion") instanceof String value ? value : "";
+    boolean inquiryPrivacyAgreed = Boolean.TRUE.equals(request.getAttribute("inquiryPrivacyAgreed"));
+    boolean openInquiryModal = "true".equalsIgnoreCase(request.getParameter("openInquiry"))
+            || Boolean.TRUE.equals(request.getAttribute("openInquiryModal"));
     Object loginRoleValue = session.getAttribute("LOGIN_MEMBER_ROLE");
     boolean loginUser = "USER".equals(loginRoleValue);
     boolean loggedIn = loginRoleValue != null;
@@ -196,6 +203,9 @@
         <% if (inquiryUnavailable) { %>
           <div class="trial-action-notice">외부 등록 임상시험은 MediTrials 직접 문의 대상이 아닙니다. 공식 등록 페이지에서 상세정보와 참여 방법을 확인해주세요.</div>
         <% } %>
+        <% if (inquiryNotice != null && !inquiryNotice.isBlank()) { %>
+          <div class="trial-action-notice trial-action-success"><%= h(inquiryNotice) %></div>
+        <% } %>
         <% if (participationNotice != null && !participationNotice.isBlank()) { %>
           <div class="trial-action-notice trial-action-success"><%= h(participationNotice) %></div>
         <% } %>
@@ -218,7 +228,7 @@
 
           <% if (inquiryAvailable) { %>
             <% if (loginUser) { %>
-              <a class="btn btn-outline w-100" href="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/inquiries/new">문의하기</a>
+              <button class="btn btn-outline w-100" id="openInquiryDialog" type="button">문의하기</button>
             <% } else if (!loggedIn) { %>
               <a class="btn btn-outline w-100" href="${pageContext.request.contextPath}/login?required=true">문의하기</a>
             <% } else { %>
@@ -266,6 +276,108 @@
     </div>
   </div>
 </main>
+
+<% if (inquiryAvailable && loginUser && trial != null) { %>
+<dialog class="trial-inquiry-dialog" id="trialInquiryDialog" aria-labelledby="trialInquiryDialogTitle">
+  <div class="trial-inquiry-dialog-panel">
+    <div class="trial-inquiry-dialog-head">
+      <div>
+        <span class="trial-inquiry-kicker">임상시험 문의</span>
+        <h2 id="trialInquiryDialogTitle">문의하기</h2>
+      </div>
+      <button class="trial-inquiry-dialog-close" type="button" data-inquiry-close aria-label="문의 팝업 닫기">×</button>
+    </div>
+
+    <div class="trial-inquiry-summary">
+      <span>문의 대상 임상시험</span>
+      <strong><%= h(trial.getTitle()) %></strong>
+      <% if (trial.getInstitutionName() != null && !trial.getInstitutionName().isBlank()) { %>
+        <small><%= h(trial.getInstitutionName()) %></small>
+      <% } %>
+    </div>
+
+    <% if (inquiryError != null && !inquiryError.isBlank()) { %>
+      <div class="trial-inquiry-error" role="alert"><%= h(inquiryError) %></div>
+    <% } %>
+
+    <form method="post" action="${pageContext.request.contextPath}/trials/<%= trial.getTrialNo() %>/inquiries/new" class="trial-inquiry-form">
+      <div class="form-group">
+        <label class="form-label" for="inquirySubject">문의 제목 <span class="required-mark">*</span></label>
+        <input
+            class="form-control"
+            id="inquirySubject"
+            name="subject"
+            type="text"
+            maxlength="200"
+            required
+            value="<%= h(inquirySubject) %>"
+            placeholder="예: 참여 조건과 방문 일정이 궁금합니다.">
+        <div class="trial-inquiry-help">200자 이내로 입력해주세요.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="inquiryQuestion">문의 내용 <span class="required-mark">*</span></label>
+        <textarea
+            class="form-control trial-inquiry-question"
+            id="inquiryQuestion"
+            name="question"
+            required
+            placeholder="참여 조건, 일정, 방문 기관 등 궁금한 내용을 작성해주세요."><%= h(inquiryQuestion) %></textarea>
+      </div>
+
+      <label class="trial-inquiry-consent" for="inquiryPrivacyAgreed">
+        <input
+            id="inquiryPrivacyAgreed"
+            name="privacyAgreed"
+            type="checkbox"
+            value="true"
+            required
+            <%= inquiryPrivacyAgreed ? "checked" : "" %>>
+        <span>개인정보 수집 및 문의 전달에 동의합니다. <strong>(필수)</strong></span>
+      </label>
+
+      <div class="trial-inquiry-actions">
+        <button class="btn btn-outline" type="button" data-inquiry-close>취소</button>
+        <button class="btn btn-primary" type="submit">문의 등록</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  const dialog = document.getElementById('trialInquiryDialog');
+  const openButton = document.getElementById('openInquiryDialog');
+  if (!dialog) return;
+
+  const openDialog = function () {
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  };
+
+  if (openButton) {
+    openButton.addEventListener('click', openDialog);
+  }
+
+  dialog.querySelectorAll('[data-inquiry-close]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      dialog.close();
+    });
+  });
+
+  dialog.addEventListener('click', function (event) {
+    if (event.target === dialog) {
+      dialog.close();
+    }
+  });
+
+  <% if (openInquiryModal) { %>
+    openDialog();
+  <% } %>
+})();
+</script>
+<% } %>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
 </body>

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -38,8 +39,7 @@ public class TrialInquiryController {
     @GetMapping("/trials/{trialNo}/inquiries/new")
     public String inquiryForm(
             @PathVariable Long trialNo,
-            HttpServletRequest request,
-            Model model) {
+            HttpServletRequest request) {
 
         Long memberNo = getLoginMemberNo(request);
         if (memberNo == null) {
@@ -54,8 +54,9 @@ public class TrialInquiryController {
             return "redirect:/trials/" + trialNo + "?inquiryUnavailable=true";
         }
 
-        model.addAttribute("trial", trial);
-        return "trial/inquiry-form";
+        // 기존 문의 작성 URL로 직접 접근해도 별도 페이지로 이동하지 않고
+        // 임상시험 상세화면의 문의 팝업을 연다.
+        return "redirect:/trials/" + trialNo + "?openInquiry=true";
     }
 
     @PostMapping("/trials/{trialNo}/inquiries/new")
@@ -65,7 +66,7 @@ public class TrialInquiryController {
             @RequestParam(name = "question", defaultValue = "") String question,
             @RequestParam(name = "privacyAgreed", defaultValue = "false") boolean privacyAgreed,
             HttpServletRequest request,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
 
         Long memberNo = getLoginMemberNo(request);
         if (memberNo == null) {
@@ -81,19 +82,29 @@ public class TrialInquiryController {
         }
 
         if (!privacyAgreed) {
-            return renderFormError(
-                    model,
-                    trial,
+            return redirectInquiryError(
+                    redirectAttributes,
+                    trialNo,
                     subject,
                     question,
+                    false,
                     "개인정보 수집 및 문의 전달에 동의해주세요.");
         }
 
         try {
-            Long inquiryNo = trialInquiryService.createInquiry(memberNo, trialNo, subject, question);
-            return "redirect:/mypage/inquiries?created=true&inquiryNo=" + inquiryNo;
+            trialInquiryService.createInquiry(memberNo, trialNo, subject, question);
+            redirectAttributes.addFlashAttribute(
+                    "inquiryNotice",
+                    "문의가 등록되었습니다. 답변은 마이페이지의 문의 내역에서 확인할 수 있습니다.");
+            return "redirect:/trials/" + trialNo;
         } catch (IllegalArgumentException exception) {
-            return renderFormError(model, trial, subject, question, exception.getMessage());
+            return redirectInquiryError(
+                    redirectAttributes,
+                    trialNo,
+                    subject,
+                    question,
+                    true,
+                    exception.getMessage());
         }
     }
 
@@ -214,18 +225,20 @@ public class TrialInquiryController {
                 .count();
     }
 
-    private String renderFormError(
-            Model model,
-            TrialVO trial,
+    private String redirectInquiryError(
+            RedirectAttributes redirectAttributes,
+            Long trialNo,
             String subject,
             String question,
+            boolean privacyAgreed,
             String errorMessage) {
 
-        model.addAttribute("trial", trial);
-        model.addAttribute("subject", subject == null ? "" : subject.trim());
-        model.addAttribute("question", question == null ? "" : question.trim());
-        model.addAttribute("formError", errorMessage);
-        return "trial/inquiry-form";
+        redirectAttributes.addFlashAttribute("inquirySubject", subject == null ? "" : subject.trim());
+        redirectAttributes.addFlashAttribute("inquiryQuestion", question == null ? "" : question.trim());
+        redirectAttributes.addFlashAttribute("inquiryPrivacyAgreed", privacyAgreed);
+        redirectAttributes.addFlashAttribute("inquiryError", errorMessage);
+        redirectAttributes.addFlashAttribute("openInquiryModal", true);
+        return "redirect:/trials/" + trialNo;
     }
 
 

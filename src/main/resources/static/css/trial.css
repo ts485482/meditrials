@@ -66,3 +66,40 @@
 .trial-action-error{border-color:#f3c9cd;background:#fff1f2;color:#a83b45}
 .trial-action-guide{padding:10px 12px;border-radius:8px;background:#f7f9fc;color:#66788d;font-size:11px;line-height:1.55}
 .trial-action-guide strong{color:#173f79}
+
+/* 임상시험 상세 - 문의 작성 팝업 */
+.trial-inquiry-dialog{
+  width:min(640px,calc(100% - 32px));
+  max-height:calc(100vh - 48px);
+  margin:auto;
+  padding:0;
+  border:0;
+  border-radius:16px;
+  background:transparent;
+  box-shadow:0 24px 70px rgba(20,48,84,.22);
+  overflow:hidden;
+}
+.trial-inquiry-dialog::backdrop{background:rgba(18,35,58,.48)}
+.trial-inquiry-dialog-panel{max-height:calc(100vh - 48px);overflow-y:auto;background:#fff;padding:26px}
+.trial-inquiry-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+.trial-inquiry-dialog-head h2{margin:4px 0 0;color:#173f79;font-size:24px;line-height:1.35}
+.trial-inquiry-kicker{color:#75869a;font-size:12px;font-weight:750}
+.trial-inquiry-dialog-close{display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;border:1px solid #dfe6ee;border-radius:50%;background:#fff;color:#6f7f91;font-size:23px;line-height:1;cursor:pointer}
+.trial-inquiry-dialog-close:hover{background:#f5f8fb;color:#173f79}
+.trial-inquiry-summary{display:flex;flex-direction:column;gap:5px;margin-bottom:20px;padding:15px 17px;border:1px solid #dce8f7;border-radius:10px;background:#f4f8ff}
+.trial-inquiry-summary span{color:#718096;font-size:11px;font-weight:750}
+.trial-inquiry-summary strong{color:#173f79;font-size:15px;line-height:1.5}
+.trial-inquiry-summary small{color:#74859a;font-size:12px}
+.trial-inquiry-error{margin-bottom:18px;padding:12px 14px;border:1px solid #f3c9cd;border-radius:9px;background:#fff1f2;color:#a83b45;font-size:13px;line-height:1.6}
+.trial-inquiry-form .required-mark{color:#d64550}
+.trial-inquiry-help{margin-top:6px;color:#8290a0;font-size:12px}
+.trial-inquiry-question{min-height:180px}
+.trial-inquiry-consent{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border:1px solid #e1e7ef;border-radius:9px;background:#f8fafc;color:#46596f;font-size:13px;line-height:1.5;cursor:pointer}
+.trial-inquiry-consent input{margin-top:2px}
+.trial-inquiry-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+@media(max-width:640px){
+  .trial-inquiry-dialog{width:calc(100% - 20px);max-height:calc(100vh - 20px)}
+  .trial-inquiry-dialog-panel{max-height:calc(100vh - 20px);padding:20px 16px}
+  .trial-inquiry-actions{flex-direction:column-reverse}
+  .trial-inquiry-actions .btn{width:100%}
+}
